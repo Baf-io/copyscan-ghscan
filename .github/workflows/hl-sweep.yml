@@ -1,0 +1,61 @@
+name: hl-sweep
+# Multi-IP HL sweep: 20 parallel runners (each a DISTINCT IP with its own HL REST budget) fetch
+# their shard of the active pool, then a collect job aggregates the raw records and COMMITS them
+# back to results/all.jsonl — so the LXC just `git pull` (token-free) and runs gh_ingest.py.
+# Trigger: tap "Run workflow" in the GitHub mobile app (Actions tab). Full ~5k pool in ~10-12 min.
+on:
+  push:
+    branches: [main]       # my push kicks off a sweep automatically (results commit carries
+                           # [skip ci] so it never re-triggers itself -> no loop)
+  workflow_dispatch: {}    # or tap "Run workflow" in the GitHub mobile app anytime
+
+permissions:
+  contents: write          # lets the collect job commit results back to the repo
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false     # one shard 429-ing must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fetch shard ${{ matrix.shard }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          OUT: "shard_${{ matrix.shard }}.jsonl"
+          DELAY: "2.5"
+        run: python3 gh_fetch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "shard-${{ matrix.shard }}"
+          path: "shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: fetch
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "shard-*"
+          merge-multiple: true
+      - name: aggregate + commit results
+        run: |
+          mkdir -p results
+          cat _artifacts/*.jsonl > results/all.jsonl 2>/dev/null || true
+          echo "swept $(wc -l < results/all.jsonl 2>/dev/null || echo 0) addrs at $(date -u +%FT%TZ)" > results/LATEST.txt
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          git add results
+          git commit -m "sweep results [skip ci]" || echo "no changes"
+          git push
