@@ -1,0 +1,75 @@
+name: onchain-enum
+# Multi-IP ON-CHAIN ADDRESS ENUMERATION: 20 runners (each a DISTINCT IP with its own per-IP
+# archived-block budget) each walk a disjoint slice of the block grid via gh_enum.py, then a
+# collect job aggregates every shard into results/enum_all.jsonl and commits it back — so the LXC
+# just `git pull` (token-free) and runs gh_enum_ingest.py. Dispatch-only (never auto-triggers).
+# Venue is pluggable: pass venue=hl (or any registered enumerator). Full HL sweep ~3-5 min.
+on:
+  workflow_dispatch:
+    inputs:
+      venue:
+        description: "venue enumerator (registered in gh_enum.py)"
+        default: "hl"
+      samples:
+        description: "GLOBAL blocks sampled across all shards"
+        default: "1800"
+      days:
+        description: "lookback window (days)"
+        default: "14"
+      delay:
+        description: "seconds between block reads per runner"
+        default: "0.8"
+
+permissions:
+  contents: write          # collect job commits results back to the repo
+
+jobs:
+  enum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false     # one shard hitting its archive cap must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: enumerate shard ${{ matrix.shard }}
+        env:
+          VENUE: ${{ inputs.venue }}
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          ENUM_SAMPLES: ${{ inputs.samples }}
+          ENUM_DAYS: ${{ inputs.days }}
+          ENUM_DELAY: ${{ inputs.delay }}
+          OUT: "enum_${{ inputs.venue }}_shard_${{ matrix.shard }}.jsonl"
+        run: python3 gh_enum.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "enum-${{ matrix.shard }}"
+          path: "enum_${{ inputs.venue }}_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: enum
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "enum-*"
+          merge-multiple: true
+      - name: aggregate + commit results
+        run: |
+          mkdir -p results
+          cat _artifacts/*.jsonl > results/enum_all.jsonl 2>/dev/null || true
+          echo "enumerated $(wc -l < results/enum_all.jsonl 2>/dev/null || echo 0) addr-rows (venue=${{ inputs.venue }}) at $(date -u +%FT%TZ)" > results/ENUM_LATEST.txt
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          git add results/enum_all.jsonl results/ENUM_LATEST.txt
+          git commit -m "enum results venue=${{ inputs.venue }} [skip ci]" || echo "no changes"
+          git push origin HEAD:main
