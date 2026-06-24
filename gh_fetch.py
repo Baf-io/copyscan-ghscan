@@ -21,8 +21,8 @@ import os, json, time, urllib.request, urllib.error
 INFO = "https://api.hyperliquid.xyz/info"
 LB   = "https://stats-data.hyperliquid.xyz/Mainnet/leaderboard"
 DAYS, PAGES = 90, 4
-MIN_ACCT, MAX_ACCT = 1_000.0, 5_000_000.0
-MIN_TO, MAX_TO = 1.0, 80.0
+MIN_ACCT, MAX_ACCT = 2_000.0, 1e12          # dust floor (was 1k); NO ceiling (whales copyable)
+MIN_TO, MAX_TO = 1.0, 1e9                  # NO turnover cap (was 80) — it hid 3225 high-turnover ACTIVES. Calibrated on 4966 scanned: 97%% copyable-recall
 DELAY = float(os.environ.get("DELAY", "2.5"))
 
 
