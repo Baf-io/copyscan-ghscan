@@ -72,4 +72,9 @@ jobs:
           git config user.email "ghscan-bot@users.noreply.github.com"
           git add results/enum_all.jsonl results/ENUM_LATEST.txt
           git commit -m "enum results venue=${{ inputs.venue }} [skip ci]" || echo "no changes"
-          git push origin HEAD:main
+          # main may have moved while the matrix ran (long free-tier queue); rebase, then push
+          # best-effort. The shard ARTIFACTS are the source of truth — the LXC retrieves via
+          # `gh run download <run> -D dir && cat dir/*/*.jsonl > enum_all.jsonl`, so a lost race
+          # here is non-fatal and must NOT red-X the run.
+          git pull --rebase origin main 2>/dev/null || git rebase --abort 2>/dev/null || true
+          git push origin HEAD:main || echo "push raced; rely on artifacts (gh run download)"

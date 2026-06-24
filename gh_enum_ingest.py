@@ -9,7 +9,12 @@ Reuses the canonical helpers from `discover_onchain_hl.py` (known_addrs / POOL /
 so the GH-distributed path and the single-IP daily path dedup + append IDENTICALLY. Venue-agnostic:
 the shard rows carry `venue`, so the same ingest serves any chain enumerated by gh_enum.py.
 
-usage:  python3 gh_enum_ingest.py [results/enum_all.jsonl]    (default path shown)
+retrieve + run (CANONICAL — artifacts are the source of truth; the collect-job git commit can lose a
+push race after a long free-tier queue, so don't depend on it):
+        gh run download <RUN_ID> -R Baf-io/copyscan-ghscan -D /tmp/enum_art
+        cat /tmp/enum_art/*/*.jsonl > /tmp/enum_all.jsonl
+        python3 gh_enum_ingest.py /tmp/enum_all.jsonl
+   (or, if the collect commit DID land: `cd ghscan && git pull && python3 gh_enum_ingest.py`)
         DISC_APPEND=0  -> report only, don't touch extra_addrs.txt
 """
 import sys, os, json, time
