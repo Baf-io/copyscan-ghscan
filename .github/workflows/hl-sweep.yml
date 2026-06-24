@@ -32,6 +32,14 @@ jobs:
           OUT: "shard_${{ matrix.shard }}.jsonl"
           DELAY: "2.5"
         run: python3 gh_fetch.py
+      - name: post shard to LXC sink
+        if: always()       # token-free retrieval: runner POSTs results straight to the LXC
+        run: |
+          test -f "shard_${{ matrix.shard }}.jsonl" || exit 0
+          curl -sS --retry 3 --max-time 240 \
+            -H "Content-Type: application/x-ndjson" \
+            --data-binary @"shard_${{ matrix.shard }}.jsonl" \
+            "https://preparing-letters-disk-homework.trycloudflare.com/sink" || true
       - uses: actions/upload-artifact@v4
         with:
           name: "shard-${{ matrix.shard }}"
