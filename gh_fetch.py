@@ -61,11 +61,28 @@ def capped_fills(addr):
     return d
 
 
+def extra_addrs():
+    """Optional explicit address list committed to the repo (extra_addrs.txt, one 0x.. per line).
+    Used to GUARANTEE coverage of known addresses the leaderboard won't surface — chiefly our
+    DEAD/BLOWN HL traders (off-leaderboard) so the malpractice corpus keeps its survivorship
+    coverage, and as a fallback if the leaderboard endpoint is blocked from GH datacenter IPs."""
+    try:
+        with open("extra_addrs.txt") as f:
+            return [ln.strip().lower() for ln in f if ln.strip().startswith("0x")]
+    except OSError:
+        return []
+
+
 def active_pool():
     """HL leaderboard -> active/copyable-shaped addresses, in stable leaderboard order.
-    Same junk filter as scan.hl_prefilter (dust/MM/inactive/buy-hold/churner dropped)."""
-    d = json.loads(urllib.request.urlopen(
-        urllib.request.Request(LB, headers={"User-Agent": "ghscan"}), timeout=40).read().decode())
+    Same junk filter as scan.hl_prefilter (dust/MM/inactive/buy-hold/churner dropped).
+    Resilient: a blocked/failed leaderboard returns [] (the shard then runs on extra_addrs)."""
+    try:
+        d = json.loads(urllib.request.urlopen(
+            urllib.request.Request(LB, headers={"User-Agent": "ghscan"}), timeout=40).read().decode())
+    except Exception as e:
+        print(f"[active_pool] leaderboard fetch failed ({e}) -> extra_addrs only", flush=True)
+        return []
     rows = d.get("leaderboardRows", d) if isinstance(d, dict) else d
     pool = []
     for r in rows:
@@ -94,7 +111,13 @@ def main():
     total = int(os.environ.get("SHARD_TOTAL", "1"))
     out = os.environ.get("OUT", f"shard_{shard}.jsonl")
     cap = int(os.environ.get("MAX", "0"))
-    pool = active_pool()
+    # union leaderboard discovery (broad, currently-active) with the explicit extra list (our known
+    # dead/blown addrs for survivorship). Dedup, stable order (leaderboard first, then extras).
+    seen, pool = set(), []
+    for a in active_pool() + extra_addrs():
+        al = a.lower()
+        if al not in seen:
+            seen.add(al); pool.append(al)
     mine = pool[shard::total]
     if cap:
         mine = mine[:cap]
