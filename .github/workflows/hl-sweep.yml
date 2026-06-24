@@ -58,11 +58,17 @@ jobs:
       - name: aggregate + commit results
         run: |
           mkdir -p results
-          cat _artifacts/*.jsonl > results/all.jsonl 2>/dev/null || true
-          echo "swept $(wc -l < results/all.jsonl 2>/dev/null || echo 0) addrs at $(date -u +%FT%TZ)" > results/LATEST.txt
           git config user.name "ghscan-bot"
           git config user.email "ghscan-bot@users.noreply.github.com"
-          git add results
-          git commit -m "sweep results [skip ci]" || echo "no changes"
-          git pull --rebase origin main 2>/dev/null || git rebase --abort 2>/dev/null || true
-          git push origin HEAD:main || echo "push raced; artifacts hold the data"
+          # race-proof commit: reset to LATEST main each try, regenerate results from the (untracked)
+          # artifacts, commit, push; retry on a concurrent push. No stale-base rebase = no conflict.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            cat _artifacts/*.jsonl > results/all.jsonl 2>/dev/null || true
+            echo "swept $(wc -l < results/all.jsonl 2>/dev/null || echo 0) addrs at $(date -u +%FT%TZ)" > results/LATEST.txt
+            git add results
+            git commit -q -m "sweep results [skip ci]" || { echo "no changes to commit"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
