@@ -4,10 +4,8 @@ name: hl-sweep
 # back to results/all.jsonl — so the LXC just `git pull` (token-free) and runs gh_ingest.py.
 # Trigger: tap "Run workflow" in the GitHub mobile app (Actions tab). Full ~5k pool in ~10-12 min.
 on:
-  push:
-    branches: [main]       # my push kicks off a sweep automatically (results commit carries
-                           # [skip ci] so it never re-triggers itself -> no loop)
-  workflow_dispatch: {}    # or tap "Run workflow" in the GitHub mobile app anytime
+  workflow_dispatch: {}    # DISPATCH-ONLY (was on:push, which spawned a redundant sweep on every
+                           # commit). Trigger explicitly: gh workflow run hl-sweep.yml, or the app.
 
 permissions:
   contents: write          # lets the collect job commit results back to the repo
@@ -66,4 +64,5 @@ jobs:
           git config user.email "ghscan-bot@users.noreply.github.com"
           git add results
           git commit -m "sweep results [skip ci]" || echo "no changes"
-          git push origin HEAD:main      # checkout leaves detached HEAD; push explicitly to main
+          git pull --rebase origin main 2>/dev/null || git rebase --abort 2>/dev/null || true
+          git push origin HEAD:main || echo "push raced; artifacts hold the data"
