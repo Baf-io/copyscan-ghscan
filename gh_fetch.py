@@ -67,7 +67,7 @@ def extra_addrs():
     DEAD/BLOWN HL traders (off-leaderboard) so the malpractice corpus keeps its survivorship
     coverage, and as a fallback if the leaderboard endpoint is blocked from GH datacenter IPs."""
     try:
-        with open("extra_addrs.txt") as f:
+        with open(os.environ.get("POOL_FILE", "extra_addrs.txt")) as f:
             return [ln.strip().lower() for ln in f if ln.strip().startswith("0x")]
     except OSError:
         return []
@@ -114,7 +114,9 @@ def main():
     # union leaderboard discovery (broad, currently-active) with the explicit extra list (our known
     # dead/blown addrs for survivorship). Dedup, stable order (leaderboard first, then extras).
     seen, pool = set(), []
-    for a in active_pool() + extra_addrs():
+    pool_only = os.environ.get("POOL_ONLY") == "1"   # incremental sweep: explicit slice only, skip leaderboard
+    src = extra_addrs() if pool_only else (active_pool() + extra_addrs())
+    for a in src:
         al = a.lower()
         if al not in seen:
             seen.add(al); pool.append(al)
