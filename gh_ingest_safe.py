@@ -6,7 +6,7 @@ S._load_adapters(); assets = S.load_assets(); now_ms = int(time.time()*1000); no
 ad = S.ADAPTERS["hl"]()
 files = sorted(f for p in (sys.argv[1:] or ["artifacts"])
                for f in (glob.glob(os.path.join(p, "**", "*.jsonl"), recursive=True) if os.path.isdir(p) else [p]))
-out = os.path.join(os.path.dirname(HERE), "probes", "scan_hl.jsonl")
+out = os.environ.get("GH_INGEST_OUT") or os.path.join(os.path.dirname(HERE), "probes", "scan_hl.jsonl")  # additive: env override so gh ingest never collides with scan.py hl lane (see coord note 2026-06-25)
 # SWEPT-LEDGER: record EVERY vetted addr (any verdict) so build_sweep_targets can skip it next run
 # (RECHECK_DAYS). This is what turns the 3h full re-sweep into a ~15min incremental slice.
 ledger = os.path.join(os.path.dirname(HERE), "out", "swept_ledger.jsonl")

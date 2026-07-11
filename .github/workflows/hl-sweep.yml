@@ -74,9 +74,13 @@ jobs:
           for i in 1 2 3 4 5; do
             git fetch -q origin main || true
             git reset -q --hard origin/main || true
-            cat _artifacts/*.jsonl > results/all.jsonl 2>/dev/null || true
-            echo "swept $(wc -l < results/all.jsonl 2>/dev/null || echo 0) addrs at $(date -u +%FT%TZ)" > results/LATEST.txt
-            git add results
+            # RAW records stay in per-shard ARTIFACTS (full aggregate ~8GB = git push HTTP 500,
+            # silently lost for weeks). Commit only a compact swept-addr summary; the LXC pulls
+            # artifacts daily via gh_pull_latest.sh -> gh_delta_run.sh.
+            rm -f results/all.jsonl
+            jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | tr 'A-Z' 'a-z' | sort -u > "results/swept_${{ github.run_id }}.txt" || true
+            echo "run ${{ github.run_id }}: swept $(wc -l < results/swept_${{ github.run_id }}.txt) addrs at $(date -u +%FT%TZ); raw records in run artifacts" > results/LATEST.txt
+            git add -A results
             git commit -q -m "sweep results [skip ci]" || { echo "no changes to commit"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
             echo "push raced, retry $i"; sleep 3
