@@ -1,0 +1,84 @@
+name: lighter-book
+# Lighter LIVE-BOOK snapshot sweep: 20 runners (each a DISTINCT cloud IP) each fetch a disjoint
+# stride-slice of the active account_id list (lighter_ids.txt) via the PUBLIC, no-auth account
+# snapshot endpoint  GET /api/v1/account?by=index&value=<id>  and distill each into a compact
+# live-book record (positions w/ unrealized/realized pnl, avg_entry, notional, liq px, sign).
+#
+# WHY snapshot-only: Lighter's per-account fill HISTORY is auth-gated (own-account only) => NO
+# realized backfill is possible. What IS public is the live open book, so this is the preventive
+# 'catch live drainers / bag-holders NOW' layer. Realized-edge vetting stays FORWARD-only via the
+# LXC lighter-collect tape logger. All fetching is OFF Roel's home network (cloud IPs) per the
+# off-network vetting rule.
+#
+# TRANSPORT LESSON (hl-sweep/hl-enum): never commit the raw aggregate -- it 500s the push once it
+# grows. Raw per-shard books stay in run ARTIFACTS; the collect job commits only a compact status
+# line. The LXC ingests via `gh run download` inside lighter_book_vet.py --run <run_id>.
+on:
+  workflow_dispatch:
+    inputs:
+      delay:
+        description: "seconds between snapshot reads per runner (>=1.05 keeps <60/min per IP)"
+        default: "1.1"
+  # no cron: the id pool is regenerated + re-committed by the LXC before each dispatch (the active
+  # set drifts as the forward collector harvests new ids), so this runs on demand only.
+
+permissions:
+  contents: write          # collect job commits the compact status line back to the repo
+
+jobs:
+  book:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false     # one shard hitting a 429 wall must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fetch live-book shard ${{ matrix.shard }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          IDS_FILE: "lighter_ids.txt"
+          DELAY: ${{ inputs.delay || '1.1' }}
+          OUT: "lighter_book_shard_${{ matrix.shard }}.jsonl"
+        run: python3 gh_lighter_book.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "lighter-book-${{ matrix.shard }}"
+          path: "lighter_book_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: book
+    if: always()           # summarize whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "lighter-book-*"
+          merge-multiple: true
+      - name: compact status commit (raw books stay in artifacts)
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          # race-proof compact commit (hl-sweep pattern): reset to LATEST main each try, write a
+          # tiny status line, commit, push; retry on a concurrent push. A lost race is non-fatal --
+          # the shard ARTIFACTS are the source of truth for the LXC ingest.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            RECS=$(cat _artifacts/*.jsonl 2>/dev/null | wc -l | tr -d ' ')
+            OPEN=$(cat _artifacts/*.jsonl 2>/dev/null | grep -c '"positions"' | tr -d ' ') || true
+            echo "run ${{ github.run_id }}: lighter live-book snapshots for ${RECS:-0} accounts (${OPEN:-0} resolved) at $(date -u +%FT%TZ); raw per-shard books in run artifacts; ingest: lighter_book_vet.py --run ${{ github.run_id }}" > results/LIGHTER_BOOK_LATEST.txt
+            git add -A results
+            git commit -q -m "lighter-book run ${{ github.run_id }} [skip ci]" || { echo "no changes to commit"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
