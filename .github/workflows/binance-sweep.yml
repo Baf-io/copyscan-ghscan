@@ -1,0 +1,118 @@
+name: binance-sweep
+# Off-network Binance copy-trade LEAD sweep: a discover job (one runner) sweeps the query-list
+# into a filtered leads pool, then 20 fetch shards (each a DISTINCT cloud IP with its own Binance
+# budget) pull per-lead DETAIL + raw FILL tape for their slice, then a collect job commits ONLY a
+# compact swept-pid summary (raw fills stay in per-shard ARTIFACTS — never commit the big
+# aggregate; hl-sweep learned that an ~8GB push silently 500s). The LXC ingests via
+# megadb_offline_binance.py --run <id> (artifact download -> offline megadb_vet gauntlet). This is
+# the ONLY place Binance per-lead fetching happens: the LXC shares one home IP with a live bot.
+#
+# GEOBLOCK NOTE: www.binance.com geo-restricts some regions; GitHub-hosted runners are Azure US.
+# The discover job prints a first-response diagnostic (code/http/has_data) so a 451/403 block is
+# visible in the job log. Probe small first (disc_max_pages=3, max_leads=20) before a full sweep.
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: "fetch shard count (must match the matrix below; informational)"
+        default: "20"
+      aum_floor:
+        description: "discover: min AUM ($) — kills tiny-capital ROI gaming"
+        default: "5000"
+      disc_max_pages:
+        description: "discover: page cap per (range x type) combo (probe=3, full=100)"
+        default: "100"
+      max_leads:
+        description: "fetch: cap leads PER SHARD (0=all; probe=20)"
+        default: "0"
+      maxrec:
+        description: "fetch: per-lead fill cap"
+        default: "3000"
+
+permissions:
+  contents: write
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: discover leads pool
+        env:
+          MODE: "discover"
+          AUM_FLOOR: ${{ inputs.aum_floor || '5000' }}
+          DISC_MAX_PAGES: ${{ inputs.disc_max_pages || '100' }}
+          OUT: "leads_pool.jsonl"
+        run: python3 gh_fetch_binance.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "binance-leads-pool"
+          path: "leads_pool.jsonl"
+          if-no-files-found: warn
+
+  fetch:
+    needs: discover
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false     # one shard 429/451-ing must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          name: "binance-leads-pool"
+      - name: fetch shard ${{ matrix.shard }}
+        env:
+          MODE: "fetch"
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          POOL_FILE: "leads_pool.jsonl"
+          OUT: "binance_shard_${{ matrix.shard }}.jsonl"
+          MAX_LEADS: ${{ inputs.max_leads || '0' }}
+          MAXREC: ${{ inputs.maxrec || '3000' }}
+        run: python3 gh_fetch_binance.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "binance-shard-${{ matrix.shard }}"
+          path: "binance_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: fetch
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "binance-shard-*"
+          merge-multiple: true
+      - name: commit compact swept-pid summary
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          # race-proof commit (hl-sweep pattern): reset to LATEST main, regenerate the COMPACT
+          # summary from the (untracked) artifacts, commit, push; retry on a concurrent push.
+          # Raw fills stay in the per-shard artifacts — the LXC pulls them via megadb_offline_binance.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | sort -u > "results/binance_swept_${{ github.run_id }}.txt" || true
+            SW=$(wc -l < "results/binance_swept_${{ github.run_id }}.txt" 2>/dev/null || echo 0)
+            echo "run ${{ github.run_id }}: binance swept $SW leads at $(date -u +%FT%TZ); raw fills in run artifacts (binance-shard-*)" > results/BINANCE_LATEST.txt
+            git add -A results
+            git commit -q -m "binance sweep results run ${{ github.run_id }} [skip ci]" || { echo "no changes"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
