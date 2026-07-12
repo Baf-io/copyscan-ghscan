@@ -1,0 +1,85 @@
+name: pacifica-sweep
+# OFF-network Pacifica full-pool fill sweep: 20 parallel runners (each a DISTINCT public IP with
+# its own Pacifica rate budget) each fetch a disjoint slice of the leaderboard-derived scan set
+# (equity>=$1k & all_time_pnl>0 & volume_30d>0) and pull per-account positions/history + live
+# positions. RAW per-shard records stay in ARTIFACTS (never committed — transport lesson from
+# hl-sweep: the full aggregate 500s the push). The collect job commits only a COMPACT addr count.
+# The LXC ingests via `gh run download` (gh_pac_pull.sh -> megadb_pac_offline.py replay/vet).
+# Trigger: workflow_dispatch (LXC `gh workflow run` or the Actions tab).
+on:
+  workflow_dispatch:
+    inputs:
+      min_equity:
+        description: "min equity_current (USD) to include"
+        default: "1000"
+      min_vol30:
+        description: "min volume_30d (>0 = traded in last 30d)"
+        default: "0"
+      delay:
+        description: "seconds between accounts per runner"
+        default: "1.5"
+      max_pages:
+        description: "positions/history pages per account (==adapter cap 15)"
+        default: "15"
+
+permissions:
+  contents: write          # collect job commits the compact summary back to the repo
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false     # one shard 429-ing must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fetch shard ${{ matrix.shard }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          OUT: "pac_shard_${{ matrix.shard }}.jsonl"
+          DELAY: ${{ inputs.delay || '1.5' }}
+          MAX_PAGES: ${{ inputs.max_pages || '15' }}
+          MIN_EQUITY: ${{ inputs.min_equity || '1000' }}
+          MIN_VOL30: ${{ inputs.min_vol30 || '0' }}
+        run: python3 gh_pac_fetch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "pac-shard-${{ matrix.shard }}"
+          path: "pac_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: fetch
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "pac-shard-*"
+          merge-multiple: true
+      - name: commit compact summary
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          # race-proof commit (hl-sweep pattern): reset to LATEST main each try, regenerate from
+          # the (untracked) artifacts, commit, push; retry on concurrent push. RAW records stay in
+          # ARTIFACTS (LXC pulls via gh_pac_pull.sh) — a lost race here is non-fatal.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | sort -u > "results/pac_swept_${{ github.run_id }}.txt" || true
+            echo "run ${{ github.run_id }}: swept $(wc -l < results/pac_swept_${{ github.run_id }}.txt) pacifica accounts at $(date -u +%FT%TZ); raw positions/history + live positions in run artifacts" > results/PAC_LATEST.txt
+            git add -A results
+            git commit -q -m "pacifica sweep results run ${{ github.run_id }} [skip ci]" || { echo "no changes"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
