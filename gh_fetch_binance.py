@@ -53,6 +53,34 @@ _ALIAS = {"XBT": "BTC", "WETH": "ETH", "WBTC": "BTC"}
 _last_req = [0.0]
 
 
+def install_proxy():
+    """Optional non-US egress. www.binance.com returns HTTP 451 (geo-restriction) to US
+    datacenter IPs, and GitHub-hosted runners are Azure-US -> a raw runner gets 0 data. Set the
+    repo secret BINANCE_PROXY to a non-US egress to unblock:
+      socks5h://user:pass@host:port  (recommended; rdns keeps DNS off the runner) — needs PySocks
+      http://user:pass@host:port     (stdlib ProxyHandler, no extra dep)
+    Unset -> behaves exactly as before (direct, will 451 from US). Returns a status string."""
+    px = os.environ.get("BINANCE_PROXY", "").strip()
+    if not px:
+        return "none (direct; will 451 from US datacenter IPs)"
+    try:
+        if px.startswith("socks5"):
+            import socks, socket, urllib.parse
+            u = urllib.parse.urlparse(px)
+            socks.set_default_proxy(socks.SOCKS5, u.hostname, u.port,
+                                    rdns=px.startswith("socks5h"),
+                                    username=u.username, password=u.password)
+            socket.socket = socks.socksocket
+            return "socks5 %s:%s" % (u.hostname, u.port)
+        import urllib.parse
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({"http": px, "https": px}))
+        urllib.request.install_opener(opener)
+        return "http-proxy %s" % (urllib.parse.urlparse(px).hostname or px)
+    except Exception as e:
+        return "FAILED (%r) — install PySocks for socks5, or use an http:// proxy" % e
+
+
 def _throttle():
     dt = time.time() - _last_req[0]
     if dt < _MIN_INTERVAL:
@@ -220,6 +248,7 @@ def mode_discover():
     aum_floor = float(os.environ.get("AUM_FLOOR", "5000"))
     max_pages = int(os.environ.get("DISC_MAX_PAGES", "100"))
     out_path = os.environ.get("OUT", "leads_pool.jsonl")
+    print("[discover] egress:", install_proxy(), flush=True)
     print("[discover] sweeping query-list (30D+90D x PNL+ROI, max_pages=%d)..." % max_pages, flush=True)
     leads, diag = get_leads(("30D", "90D"), ("PNL", "ROI"), max_pages=max_pages)
     print("[discover] first-response diag:", json.dumps(diag), flush=True)
@@ -261,6 +290,7 @@ def mode_fetch():
     max_leads = int(os.environ.get("MAX_LEADS", "0"))
     extra_delay = float(os.environ.get("DELAY", "0"))
     SERIAL_CYCLER_MIN = 3
+    print("[fetch shard %s] egress:" % os.environ.get("SHARD_INDEX", "0"), install_proxy(), flush=True)
     try:
         pool = [json.loads(l) for l in open(pool_file) if l.strip()]
     except OSError:

@@ -41,12 +41,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: install PySocks (for socks5 BINANCE_PROXY; harmless if unused)
+        run: pip -q install pysocks || true
       - name: discover leads pool
         env:
           MODE: "discover"
           AUM_FLOOR: ${{ inputs.aum_floor || '5000' }}
           DISC_MAX_PAGES: ${{ inputs.disc_max_pages || '100' }}
           OUT: "leads_pool.jsonl"
+          BINANCE_PROXY: ${{ secrets.BINANCE_PROXY }}   # non-US egress; unset -> 451 from US runner
         run: python3 gh_fetch_binance.py
       - uses: actions/upload-artifact@v4
         with:
@@ -67,6 +70,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: install PySocks (for socks5 BINANCE_PROXY; harmless if unused)
+        run: pip -q install pysocks || true
       - uses: actions/download-artifact@v4
         with:
           name: "binance-leads-pool"
@@ -79,6 +84,7 @@ jobs:
           OUT: "binance_shard_${{ matrix.shard }}.jsonl"
           MAX_LEADS: ${{ inputs.max_leads || '0' }}
           MAXREC: ${{ inputs.maxrec || '3000' }}
+          BINANCE_PROXY: ${{ secrets.BINANCE_PROXY }}   # non-US egress; unset -> 451 from US runner
         run: python3 gh_fetch_binance.py
       - uses: actions/upload-artifact@v4
         with:
