@@ -45,6 +45,7 @@ jobs:
           DELAY: ${{ inputs.delay || '0.35' }}
         run: python3 sol_openbook.py
       - uses: actions/upload-artifact@v4
+        if: always()   # a timed-out shard still ships its partial (line-buffered) jsonl
         with:
           name: "openbook-${{ matrix.venue }}-${{ matrix.shard }}"
           path: "openbook_${{ matrix.venue }}_shard_${{ matrix.shard }}.jsonl"

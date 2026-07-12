@@ -42,6 +42,9 @@ DELAY       = float(os.environ.get("DELAY", "0.35"))
 RPCS = [os.environ["SOLANA_RPC"]] if os.environ.get("SOLANA_RPC") else [
     "https://api.mainnet-beta.solana.com",
     "https://solana-rpc.publicnode.com",
+    "https://solana.drpc.org",
+    "https://endpoints.omniatech.io/v1/sol/mainnet/public",
+    "https://api.mainnet.rpcpool.com",
 ]
 
 JPP  = "PERPHjGBqRHArX4DySjwM6UJHiR3sWAatqfdBS2qQJu"
@@ -187,7 +190,7 @@ def main():
     print("shard %d/%d venue=%s holders=%d marks=%d" %
           (SHARD_INDEX, SHARD_TOTAL, VENUE, len(mine), len(marks)), flush=True)
     n_open = n_flat = n_err = 0
-    with open(OUT, "w") as f:
+    with open(OUT, "w", buffering=1) as f:
         for i, a in enumerate(mine):
             try:
                 positions, notional, equity = reader(a, marks)
