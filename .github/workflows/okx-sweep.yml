@@ -1,0 +1,86 @@
+name: okx-sweep
+# OFF-NETWORK OKX copy-lead fetch: 8 parallel runners (each a DISTINCT cloud IP with its own
+# OKX rate budget) fetch their shard of the committed ~259-lead pool (okx_leads_pool.txt) --
+# for every lead: closed round-trip HISTORY (public-subpositions-history, paginated) AND the
+# live open book (public-current-subpositions). RAW responses stay in per-shard ARTIFACTS
+# (transport lesson from hl-sweep: never commit the raw aggregate); the collect job commits
+# only a COMPACT per-lead summary. The LXC then pulls artifacts (gh api zip) and runs the
+# offline canonical vet (okx_offline.py) with ZERO home-network OKX calls.
+#
+# CANARY FIRST: dispatch with max=3 to confirm the US-based GitHub runners can actually reach
+# OKX's copytrading API (OKX geo-restricts) before committing to the full 259-lead sweep.
+on:
+  workflow_dispatch:
+    inputs:
+      max:
+        description: "cap leads PER SHARD (0 = full pool; use 3 for a reachability canary)"
+        default: "0"
+      delay:
+        description: "seconds between requests per runner (>=0.5 keeps <5 req/2s/IP)"
+        default: "0.5"
+
+permissions:
+  contents: write          # collect job commits the compact summary back to the repo
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false     # one shard 429/geo-blocking must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: fetch shard ${{ matrix.shard }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "8"
+          POOL_FILE: "okx_leads_pool.txt"
+          OUT: "okx_shard_${{ matrix.shard }}.jsonl"
+          MAX: ${{ github.event.inputs.max || '0' }}
+          DELAY: ${{ github.event.inputs.delay || '0.5' }}
+        run: python3 okx_gh_fetch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "okx-shard-${{ matrix.shard }}"
+          path: "okx_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: fetch
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "okx-shard-*"
+          merge-multiple: true
+      - name: summarize + commit compact result
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          # race-proof commit (hl-sweep pattern): reset to LATEST main each try, regenerate from
+          # the (untracked) artifacts, commit, push, retry on a concurrent push. RAW records stay
+          # in the run ARTIFACTS (source of truth for the LXC replay); we commit only a compact
+          # per-lead summary line: "<addr> n_hist=<n> n_pos=<n> hist_code=<c>".
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            jq -r '"\(.addr) n_hist=\(.n_hist) n_pos=\(.n_pos) hist_code=\(.hist_code)"' \
+              _artifacts/*.jsonl 2>/dev/null | sort -u > "results/okx_${{ github.run_id }}.txt" || true
+            HOK=$(jq -r 'select((.n_hist//0)>0) | .addr' _artifacts/*.jsonl 2>/dev/null | sort -u | wc -l)
+            HID=$(jq -r 'select(.hist_code=="60004") | .addr' _artifacts/*.jsonl 2>/dev/null | sort -u | wc -l)
+            TOT=$(jq -r '.addr' _artifacts/*.jsonl 2>/dev/null | sort -u | wc -l)
+            echo "run ${{ github.run_id }}: $TOT leads fetched, $HOK with history, $HID hidden(60004) at $(date -u +%FT%TZ); raw per-shard jsonl in run artifacts" > results/OKX_LATEST.txt
+            git add -A results
+            git commit -q -m "okx-sweep results run ${{ github.run_id }} [skip ci]" || { echo "no changes"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
