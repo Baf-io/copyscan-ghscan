@@ -1,0 +1,1 @@
+run 29188410032: openbook rows(open positions)=0 read_err=0 at 2026-07-12T10:23:33Z; raw shard jsonl in run artifacts
