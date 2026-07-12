@@ -1,0 +1,81 @@
+name: sol-openbook
+# LIVE OPEN-BOOK SCAN for positions-only Solana venues (Jupiter Perps + Drift), OFF Roel's home network.
+# 10 shards x 2 venues = 20 distinct cloud-runner IPs, each reads its disjoint slice of the holder list
+# (ghscan/sol_jup_addrs.txt / sol_drift_addrs.txt) from PUBLIC Solana RPC via sol_openbook.py, computing
+# per-position entry/mark/underwater. TRANSPORT LESSON (hl-sweep): the raw per-holder rows are HEAVY and
+# stay in run ARTIFACTS; the collect job commits ONLY a compact one-line summary. The LXC ingests the
+# artifacts via sol_openbook_offline.py (gh run download) and applies the discipline gate offline.
+# Triggers: manual dispatch (the "check ALL data NOW" run) + weekly cron (forward re-scan of live bags).
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: "shards per venue (holders split idx::shards)"
+        default: "10"
+      delay:
+        description: "seconds between per-holder RPC reads"
+        default: "0.35"
+  schedule:
+    - cron: "20 4 * * 1"   # Mon 04:20 UTC, pre-06:00 hl-sweep window (inputs.* EMPTY on cron -> || fallbacks)
+
+permissions:
+  contents: write          # collect job commits the compact summary
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false     # one shard 429-ing must not kill the others
+      matrix:
+        venue: [jup, drift]
+        shard: [0,1,2,3,4,5,6,7,8,9]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: openbook ${{ matrix.venue }} shard ${{ matrix.shard }}
+        env:
+          VENUE: ${{ matrix.venue }}
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: ${{ inputs.shards || '10' }}
+          ADDR_FILE: "sol_${{ matrix.venue }}_addrs.txt"
+          OUT: "openbook_${{ matrix.venue }}_shard_${{ matrix.shard }}.jsonl"
+          DELAY: ${{ inputs.delay || '0.35' }}
+        run: python3 sol_openbook.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "openbook-${{ matrix.venue }}-${{ matrix.shard }}"
+          path: "openbook_${{ matrix.venue }}_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: scan
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "openbook-*"
+          merge-multiple: true
+      - name: compact summary + commit
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          mkdir -p results
+          # COMPACT summary only (counts). Raw per-holder rows stay in ARTIFACTS for the LXC ingest.
+          OPEN=$(cat _artifacts/*.jsonl 2>/dev/null | grep -c '"read_ok": true' || true)
+          ERR=$(cat _artifacts/*.jsonl 2>/dev/null | grep -c '"read_ok": false' || true)
+          echo "run ${{ github.run_id }}: openbook rows(open positions)=$OPEN read_err=$ERR at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > "results/SOL_OPENBOOK_LATEST.txt"
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            echo "run ${{ github.run_id }}: openbook rows(open positions)=$OPEN read_err=$ERR at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > "results/SOL_OPENBOOK_LATEST.txt"
+            git add -A results
+            git commit -q -m "sol-openbook summary run ${{ github.run_id }} [skip ci]" || { echo "nothing to commit"; break; }
+            if git push -q origin HEAD:main; then echo "pushed try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
