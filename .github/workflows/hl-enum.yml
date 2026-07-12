@@ -1,9 +1,16 @@
 name: onchain-enum
 # Multi-IP ON-CHAIN ADDRESS ENUMERATION: 20 runners (each a DISTINCT IP with its own per-IP
-# archived-block budget) each walk a disjoint slice of the block grid via gh_enum.py, then a
-# collect job aggregates every shard into results/enum_all.jsonl and commits it back — so the LXC
-# just `git pull` (token-free) and runs gh_enum_ingest.py. Dispatch-only (never auto-triggers).
-# Venue is pluggable: pass venue=hl (or any registered enumerator). Full HL sweep ~3-5 min.
+# archived-block budget: 100 blockDetails/day) each walk a disjoint slice of the block grid via
+# gh_enum.py, then a collect job merges every shard into a COMPACT addr list
+# results/enum_<run_id>.txt and commits it. TRANSPORT LESSON (from hl-sweep): never commit the
+# raw aggregate — it silently 500s the push once it grows; raw per-shard jsonl stays in run
+# ARTIFACTS and the LXC ingests via `gh run download` (ghscan/gh_enum_pull.sh, 09:30 UTC cron).
+# Triggers: manual dispatch + daily 05:35 UTC cron. 05:35 deliberately NOT ~07:30: the LXC
+# dispatches hl-sweep at 06:00 UTC and its 20 shards occupy ALL free-tier job slots for ~4h
+# (measured 2026-07-12: 06:00 sweep still in_progress at 08:45), so a 07:30 enum would queue
+# until ~10:00 and miss the 09:30 LXC merge by a day; 05:35 runs in the empty pre-sweep window
+# (full enum ~6 min, measured run 28801068503) and its addrs ride TOMORROW'S 06:00 sweep.
+# Venue is pluggable: pass venue=hl (or any enumerator registered in gh_enum.py).
 on:
   workflow_dispatch:
     inputs:
@@ -11,17 +18,19 @@ on:
         description: "venue enumerator (registered in gh_enum.py)"
         default: "hl"
       samples:
-        description: "GLOBAL blocks sampled across all shards"
-        default: "1800"
+        description: "GLOBAL blocks across all shards (1700 = ~85/IP, under the 100/day/IP cap)"
+        default: "1700"
       days:
         description: "lookback window (days)"
         default: "14"
       delay:
         description: "seconds between block reads per runner"
         default: "0.8"
+  schedule:
+    - cron: "35 5 * * *"   # UTC. inputs.* are EMPTY on cron -> every use below carries a || fallback
 
 permissions:
-  contents: write          # collect job commits results back to the repo
+  contents: write          # collect job commits the compact addr list back to the repo
 
 jobs:
   enum:
@@ -38,18 +47,18 @@ jobs:
           python-version: "3.11"
       - name: enumerate shard ${{ matrix.shard }}
         env:
-          VENUE: ${{ inputs.venue }}
+          VENUE: ${{ inputs.venue || 'hl' }}
           SHARD_INDEX: ${{ matrix.shard }}
           SHARD_TOTAL: "20"
-          ENUM_SAMPLES: ${{ inputs.samples }}
-          ENUM_DAYS: ${{ inputs.days }}
-          ENUM_DELAY: ${{ inputs.delay }}
-          OUT: "enum_${{ inputs.venue }}_shard_${{ matrix.shard }}.jsonl"
+          ENUM_SAMPLES: ${{ inputs.samples || '1700' }}
+          ENUM_DAYS: ${{ inputs.days || '14' }}
+          ENUM_DELAY: ${{ inputs.delay || '0.8' }}
+          OUT: "enum_${{ inputs.venue || 'hl' }}_shard_${{ matrix.shard }}.jsonl"
         run: python3 gh_enum.py
       - uses: actions/upload-artifact@v4
         with:
           name: "enum-${{ matrix.shard }}"
-          path: "enum_${{ inputs.venue }}_shard_${{ matrix.shard }}.jsonl"
+          path: "enum_${{ inputs.venue || 'hl' }}_shard_${{ matrix.shard }}.jsonl"
           if-no-files-found: warn
 
   collect:
@@ -63,18 +72,24 @@ jobs:
           path: _artifacts
           pattern: "enum-*"
           merge-multiple: true
-      - name: aggregate + commit results
+      - name: merge + commit compact addr list
         run: |
-          mkdir -p results
-          cat _artifacts/*.jsonl > results/enum_all.jsonl 2>/dev/null || true
-          echo "enumerated $(wc -l < results/enum_all.jsonl 2>/dev/null || echo 0) addr-rows (venue=${{ inputs.venue }}) at $(date -u +%FT%TZ)" > results/ENUM_LATEST.txt
+          VENUE="${{ inputs.venue || 'hl' }}"
           git config user.name "ghscan-bot"
           git config user.email "ghscan-bot@users.noreply.github.com"
-          git add results/enum_all.jsonl results/ENUM_LATEST.txt
-          git commit -m "enum results venue=${{ inputs.venue }} [skip ci]" || echo "no changes"
-          # main may have moved while the matrix ran (long free-tier queue); rebase, then push
-          # best-effort. The shard ARTIFACTS are the source of truth — the LXC retrieves via
-          # `gh run download <run> -D dir && cat dir/*/*.jsonl > enum_all.jsonl`, so a lost race
-          # here is non-fatal and must NOT red-X the run.
-          git pull --rebase origin main 2>/dev/null || git rebase --abort 2>/dev/null || true
-          git push origin HEAD:main || echo "push raced; rely on artifacts (gh run download)"
+          # race-proof commit (hl-sweep pattern): reset to LATEST main each try, regenerate from
+          # the (untracked) artifacts, commit, push; retry on a concurrent push. A lost race is
+          # non-fatal — the shard ARTIFACTS are the source of truth for the LXC ingest.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            # COMPACT addr list only; also drop the legacy 3MB full aggregate from the tip.
+            rm -f results/enum_all.jsonl
+            jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | tr 'A-Z' 'a-z' | grep '^0x' | sort -u > "results/enum_${{ github.run_id }}.txt" || true
+            echo "run ${{ github.run_id }}: enumerated $(wc -l < "results/enum_${{ github.run_id }}.txt") distinct addrs (venue=$VENUE) at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > results/ENUM_LATEST.txt
+            git add -A results
+            git commit -q -m "enum results venue=$VENUE run ${{ github.run_id }} [skip ci]" || { echo "no changes to commit"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
