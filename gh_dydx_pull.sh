@@ -29,7 +29,7 @@ gh run download "$RUN" -R Baf-io/copyscan-ghscan -p 'dydx-*' -D "$DEST" || {
   curl -s -H "Title: dydx-enum merge FAILED" -d "run $RUN: artifact download failed" "$NTFY" >/dev/null
   exit 1
 }
-find "$DEST" -name '*.jsonl' -exec cat {} + > "$DEST/dydx_all.jsonl"
+find "$DEST" -name 'enum_dydx_shard_*.jsonl' -exec cat {} + > "$DEST/dydx_all.jsonl"
 if [ ! -s "$DEST/dydx_all.jsonl" ]; then
   echo "empty dydx-enum output for run $RUN (quiet chain / LCDs down?)"
   curl -s -H "Title: dydx-enum merge" -d "run $RUN: shards produced 0 rows (quiet chain / LCD down?)" "$NTFY" >/dev/null
