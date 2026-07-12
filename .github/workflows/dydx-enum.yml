@@ -1,0 +1,96 @@
+name: dydx-enum
+# Multi-IP dYdX v4 ACTIVE-TRADER ENUMERATION: 20 runners (each a DISTINCT cloud IP, ZERO home-IP
+# impact) each crawl an interleaved slice of a recent block window against a public dYdX Cosmos LCD
+# node, decode the clob trading messages to owner subaccount addresses (dydx1...), and upload a
+# compact per-shard jsonl artifact. A collect job merges every shard into a COMPACT dedup addr list
+# results/dydx_enum_<run_id>.txt and commits it.
+#
+# WHY CLOUD, NOT LXC: a chain block-crawl fans out one flow per block; run from the home LXC it
+# spiked router NAT conntrack (~78/s) and starved Roel's connection (2026-07-12 — the LXC crawler
+# discover_dydx.py was KILLED + neutralized). Cloud runners have their own budget and no home impact.
+#
+# TRANSPORT LESSON (from hl-sweep/hl-enum): never commit the raw aggregate — it silently 500s the
+# push once it grows. Raw per-shard jsonl stays in run ARTIFACTS; the LXC ingests via `gh run
+# download` (gh_dydx_pull.sh, 07:00 UTC cron). The committed results/*.txt is a compact summary only.
+#
+# SCHEDULE: 04:15 UTC daily. Deliberately in the PRE-SWEEP empty window: the LXC dispatches hl-sweep
+# at 06:00 UTC and its 20 shards occupy ALL free-tier job slots for ~4h (measured), and hl-enum runs
+# at 05:35 — a post-06:00 dydx run would queue for hours. 04:15 finishes (~10 min) well before hl-enum
+# at 05:35, so no free-tier contention. Also manually dispatchable anytime.
+on:
+  workflow_dispatch:
+    inputs:
+      blocks:
+        description: "GLOBAL block window across all shards (12000 = ~600/shard, ~4.3h of dYdX blocks)"
+        default: "12000"
+      delay:
+        description: "seconds between block reads per runner (politeness to public LCDs)"
+        default: "0.6"
+      tip:
+        description: "optional tip height override (blank = each shard resolves live tip)"
+        default: ""
+  schedule:
+    - cron: "15 4 * * *"   # UTC. inputs.* are EMPTY on cron -> every use below carries a || fallback
+
+permissions:
+  contents: write          # collect job commits the compact addr list back to the repo
+
+jobs:
+  enum:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false     # one shard hitting a flaky LCD must not kill the others
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: enumerate dydx shard ${{ matrix.shard }}
+        env:
+          SHARD_INDEX: ${{ matrix.shard }}
+          SHARD_TOTAL: "20"
+          DYDX_BLOCKS: ${{ inputs.blocks || '12000' }}
+          DYDX_DELAY: ${{ inputs.delay || '0.6' }}
+          DYDX_TIP: ${{ inputs.tip || '' }}
+          DYDX_MAX_MIN: "18"
+          OUT: "enum_dydx_shard_${{ matrix.shard }}.jsonl"
+        run: python3 dydx_enum.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: "dydx-${{ matrix.shard }}"
+          path: "enum_dydx_shard_${{ matrix.shard }}.jsonl"
+          if-no-files-found: warn
+
+  collect:
+    needs: enum
+    if: always()           # aggregate whatever shards succeeded
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: _artifacts
+          pattern: "dydx-*"
+          merge-multiple: true
+      - name: merge + commit compact dydx addr list
+        run: |
+          git config user.name "ghscan-bot"
+          git config user.email "ghscan-bot@users.noreply.github.com"
+          # race-proof commit (hl-enum pattern): reset to LATEST main each try, regenerate from the
+          # (untracked) artifacts, commit, push; retry on a concurrent push. A lost race is non-fatal
+          # — the shard ARTIFACTS are the source of truth for the LXC ingest.
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results
+            # COMPACT dydx1 addr list only (dYdX addrs are bech32 'dydx1...', NOT 0x).
+            jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | grep '^dydx1' | sort -u > "results/dydx_enum_${{ github.run_id }}.txt" || true
+            echo "run ${{ github.run_id }}: enumerated $(wc -l < "results/dydx_enum_${{ github.run_id }}.txt") distinct dydx1 addrs at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > results/DYDX_ENUM_LATEST.txt
+            git add -A results
+            git commit -q -m "dydx enum results run ${{ github.run_id }} [skip ci]" || { echo "no changes to commit"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
