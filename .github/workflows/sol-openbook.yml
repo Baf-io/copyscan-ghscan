@@ -1,58 +1,80 @@
 name: sol-openbook
 # LIVE OPEN-BOOK SCAN for positions-only Solana venues (Jupiter Perps + Drift), OFF Roel's home network.
-# 10 shards x 2 venues = 20 distinct cloud-runner IPs, each reads its disjoint slice of the holder list
-# (ghscan/sol_jup_addrs.txt / sol_drift_addrs.txt) from PUBLIC Solana RPC via sol_openbook.py, computing
-# per-position entry/mark/underwater. TRANSPORT LESSON (hl-sweep): the raw per-holder rows are HEAVY and
-# stay in run ARTIFACTS; the collect job commits ONLY a compact one-line summary. The LXC ingests the
-# artifacts via sol_openbook_offline.py (gh run download) and applies the discipline gate offline.
-# Triggers: manual dispatch (the "check ALL data NOW" run) + weekly cron (forward re-scan of live bags).
+# v2 uses BULK reads (per-holder gPA throttled to death on free RPC):
+#   jup  = ONE runner, 3 per-custody full-program getProgramAccounts (SOL/ETH/BTC) -> every open Position.
+#   drift= 10 sharded runners, cheap getMultipleAccounts on PRECOMPUTED user PDAs (sol_drift_pdas.jsonl).
+# Distinct cloud runner IPs; ZERO Roel-home-IP spend. Raw per-holder rows stay in run ARTIFACTS (hl-sweep
+# transport lesson); collect commits ONLY a compact summary. LXC sol_openbook_offline.py ingests the
+# artifacts + applies the discipline gate offline. Triggers: manual dispatch (check-ALL-data-NOW) + weekly
+# cron (forward re-scan of live bags).
 on:
   workflow_dispatch:
     inputs:
       shards:
-        description: "shards per venue (holders split idx::shards)"
+        description: "drift shards (authorities split idx::shards)"
         default: "10"
       delay:
-        description: "seconds between per-holder RPC reads"
-        default: "0.35"
+        description: "seconds between RPC batches"
+        default: "0.15"
   schedule:
     - cron: "20 4 * * 1"   # Mon 04:20 UTC, pre-06:00 hl-sweep window (inputs.* EMPTY on cron -> || fallbacks)
 
 permissions:
-  contents: write          # collect job commits the compact summary
+  contents: write
 
 jobs:
-  scan:
+  jup:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: openbook jupiter (bulk per-custody gPA)
+        env:
+          VENUE: jup
+          ADDR_FILE: "sol_jup_addrs.txt"
+          OUT: "openbook_jup.jsonl"
+          DELAY: ${{ inputs.delay || '0.15' }}
+        run: python3 sol_openbook.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: "openbook-jup"
+          path: "openbook_jup.jsonl"
+          if-no-files-found: warn
+
+  drift:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
-      fail-fast: false     # one shard 429-ing must not kill the others
+      fail-fast: false
       matrix:
-        venue: [jup, drift]
         shard: [0,1,2,3,4,5,6,7,8,9]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: openbook ${{ matrix.venue }} shard ${{ matrix.shard }}
+      - name: openbook drift shard ${{ matrix.shard }}
         env:
-          VENUE: ${{ matrix.venue }}
+          VENUE: drift
           SHARD_INDEX: ${{ matrix.shard }}
           SHARD_TOTAL: ${{ inputs.shards || '10' }}
-          ADDR_FILE: "sol_${{ matrix.venue }}_addrs.txt"
-          OUT: "openbook_${{ matrix.venue }}_shard_${{ matrix.shard }}.jsonl"
-          DELAY: ${{ inputs.delay || '0.35' }}
+          PDA_FILE: "sol_drift_pdas.jsonl"
+          OUT: "openbook_drift_shard_${{ matrix.shard }}.jsonl"
+          DELAY: ${{ inputs.delay || '0.15' }}
         run: python3 sol_openbook.py
       - uses: actions/upload-artifact@v4
         if: always()   # a timed-out shard still ships its partial (line-buffered) jsonl
         with:
-          name: "openbook-${{ matrix.venue }}-${{ matrix.shard }}"
-          path: "openbook_${{ matrix.venue }}_shard_${{ matrix.shard }}.jsonl"
+          name: "openbook-drift-${{ matrix.shard }}"
+          path: "openbook_drift_shard_${{ matrix.shard }}.jsonl"
           if-no-files-found: warn
 
   collect:
-    needs: scan
+    needs: [jup, drift]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -67,14 +89,11 @@ jobs:
           git config user.name "ghscan-bot"
           git config user.email "ghscan-bot@users.noreply.github.com"
           mkdir -p results
-          # COMPACT summary only (counts). Raw per-holder rows stay in ARTIFACTS for the LXC ingest.
           OPEN=$(cat _artifacts/*.jsonl 2>/dev/null | grep -c '"read_ok": true' || true)
-          ERR=$(cat _artifacts/*.jsonl 2>/dev/null | grep -c '"read_ok": false' || true)
-          echo "run ${{ github.run_id }}: openbook rows(open positions)=$OPEN read_err=$ERR at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > "results/SOL_OPENBOOK_LATEST.txt"
           for i in 1 2 3 4 5; do
             git fetch -q origin main || true
             git reset -q --hard origin/main || true
-            echo "run ${{ github.run_id }}: openbook rows(open positions)=$OPEN read_err=$ERR at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > "results/SOL_OPENBOOK_LATEST.txt"
+            echo "run ${{ github.run_id }}: openbook rows(open positions)=$OPEN at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > "results/SOL_OPENBOOK_LATEST.txt"
             git add -A results
             git commit -q -m "sol-openbook summary run ${{ github.run_id }} [skip ci]" || { echo "nothing to commit"; break; }
             if git push -q origin HEAD:main; then echo "pushed try $i"; break; fi
