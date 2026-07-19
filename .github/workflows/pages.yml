@@ -1,0 +1,39 @@
+name: pages
+# Render the public shadow-board (results/scoreboard.json + shadow/summary.jsonl) -> docs/index.html
+# and deploy to GitHub Pages. Rebuilds after each vet/shadow run. No engine IP here — pure renderer.
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["vet", "shadow"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: render scoreboard
+        run: python3 tools/make_scoreboard.py --out docs/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+      - id: deploy
+        uses: actions/deploy-pages@v4
