@@ -1,0 +1,57 @@
+name: shadow
+# Forward SHADOW ledger: for each top-N pick, re-fetch its fills since it made the board (runner IP,
+# off the home budget), replay the pipeline's own copy-sim on the forward-only fills, and accumulate
+# per-trip our_E -> shadow/ledger.jsonl + a per-lead summary (promotion at >=14d / >=10 trips / cum>0).
+# pf2 is PARKED: this is a PAPER forward record, no execution. Idempotent — re-fetches + dedups each run.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "20 */6 * * *"     # 4x/day forward tick; each run re-derives the full forward window
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shadow
+  cancel-in-progress: false
+
+jobs:
+  shadow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: check out private vet engine (read-only deploy key)
+        uses: actions/checkout@v4
+        with:
+          repository: Baf-io/copyscan-vet
+          ref: master
+          path: vet
+          ssh-key: ${{ secrets.VET_DEPLOY_KEY }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: deps
+        run: pip install requests
+
+      - name: forward shadow tick (runner IP, off home budget)
+        run: python3 vet/gh_shadow.py
+
+      - name: commit ledger + summary
+        run: |
+          git config user.name "gh-shadow"
+          git config user.email "gh-shadow@users.noreply.github.com"
+          mkdir -p /tmp/so
+          cp -f shadow/ledger.jsonl shadow/summary.jsonl /tmp/so/ 2>/dev/null || true
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p shadow
+            cp -f /tmp/so/ledger.jsonl /tmp/so/summary.jsonl shadow/ 2>/dev/null || true
+            git add -A shadow
+            git commit -q -m "shadow: forward tick $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
