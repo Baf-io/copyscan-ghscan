@@ -30,7 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        venue: [gtrade, pacifica]
+        venue: [gtrade, pacifica, orderly]
         shard: [0,1,2,3,4,5,6,7,8,9]
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
           git config user.name "gh-venue"
           git config user.email "gh-venue@users.noreply.github.com"
           mkdir -p /tmp/vo
-          for V in gtrade pacifica; do
+          for V in gtrade pacifica orderly; do
             cat _artifacts/shard_${V}_*.jsonl 2>/dev/null | sort -u > "/tmp/vo/vetted_${V}.jsonl" || true
             echo "${V}: $(wc -l < "/tmp/vo/vetted_${V}.jsonl" 2>/dev/null || echo 0) copyable leads"
           done
@@ -87,11 +87,11 @@ jobs:
             git fetch -q origin main || true
             git reset -q --hard origin/main || true
             mkdir -p results
-            for V in gtrade pacifica; do
+            for V in gtrade pacifica orderly; do
               cp -f "/tmp/vo/vetted_${V}.jsonl" "results/vetted_${V}.jsonl" 2>/dev/null || true
             done
             git add -A results
-            git commit -q -m "venues: gtrade+pacifica vetted $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
+            git commit -q -m "venues: gtrade+pacifica+orderly vetted $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
             echo "push raced, retry $i"; sleep 3
           done
