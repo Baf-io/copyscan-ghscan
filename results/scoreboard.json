@@ -1,0 +1,58 @@
+{
+ "ts": 1784483661,
+ "n": 1,
+ "n_picks": 0,
+ "rows": [
+  {
+   "addr": "0x0c5ba524dd2e2453e63cda7fe2b9c8755ca0f5c9",
+   "venue": "hl",
+   "tier": "WATCH",
+   "span_d": 89.2,
+   "n_fills": 2795,
+   "wr_all_trips": 38,
+   "sr_ann": 1.25,
+   "dsr_daily": 0.002,
+   "net": 1516,
+   "recency_d": 1.2,
+   "copyable_coins": [
+    "SPX",
+    "ZEC"
+   ],
+   "coins": {
+    "SPX": {
+     "our_E_pct": 1.832,
+     "rr": 1.82,
+     "bracket_rr": 2.34,
+     "sl_pct": 0.0191,
+     "n_trips": 44,
+     "hold_h": 6.48,
+     "spread_rt_bp": 7.0
+    },
+    "ZEC": {
+     "our_E_pct": 1.224,
+     "rr": 1.88,
+     "bracket_rr": 1.51,
+     "sl_pct": 0.0298,
+     "n_trips": 47,
+     "hold_h": 4.75,
+     "spread_rt_bp": 1.44
+    }
+   },
+   "score": 3.056,
+   "vetted_at": 1784483640,
+   "src": "gh-vet",
+   "av": 15782,
+   "open": 0,
+   "open_upnl": 0,
+   "worst_roe": 0.0,
+   "r7": 0,
+   "r30": 0,
+   "r90": 0,
+   "r400": -32340,
+   "nfills_400d": 2000,
+   "last_d": 201.7,
+   "verdict": "REJECT",
+   "why": "realized 30d & 90d both <= 0 (streak-peak faded)"
+  }
+ ]
+}
