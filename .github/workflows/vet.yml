@@ -1,0 +1,88 @@
+name: vet
+# Off-IP copy-lead vet: takes the latest hl-sweep artifacts (raw fills fetched by 20 runner IPs),
+# replays the FULL offline forensic gauntlet on this runner (zero live HL — megadb_vet.info patched),
+# then does the LIVE open-book loss-hider pass FROM THE RUNNER IP (off the home trade-desk budget).
+# Commits results/vetted.jsonl + results/scoreboard.json + shadow/picks.* back to main. The home LXC
+# is never involved — this is the "100% GitHub-hosted" vet leg.
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "hl-sweep run id to vet (blank = latest successful)"
+        required: false
+      top:
+        description: "how many picks to shadow"
+        default: "50"
+      max_shards:
+        description: "test aid: vet only first K sweep shards (0 = all 20)"
+        default: "0"
+  schedule:
+    - cron: "0 8 * * *"     # ~2h after the 06:00 hl-sweep; vets the latest successful sweep
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vet
+  cancel-in-progress: false
+
+jobs:
+  vet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: check out private vet engine (read-only deploy key)
+        uses: actions/checkout@v4
+        with:
+          repository: Baf-io/copyscan-vet
+          ref: master
+          path: vet
+          ssh-key: ${{ secrets.VET_DEPLOY_KEY }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: deps
+        run: pip install requests
+
+      - name: resolve hl-sweep run id
+        id: rid
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RID="${{ github.event.inputs.run_id }}"
+          if [ -z "$RID" ]; then
+            RID=$(gh run list -R ${{ github.repository }} -w hl-sweep.yml -s success -L 1 --json databaseId -q '.[0].databaseId')
+          fi
+          echo "run_id=$RID" >> "$GITHUB_OUTPUT"
+          echo "vetting hl-sweep run $RID"
+
+      - name: offline vet (zero live HL)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GHSCAN_REPO: ${{ github.repository }}
+        run: python3 vet/gh_vet.py --run "${{ steps.rid.outputs.run_id }}" --src gh-vet --max-shards "${{ github.event.inputs.max_shards || '0' }}"
+
+      - name: open-book loss-hider pass (runner IP, off home budget)
+        run: python3 vet/gh_openbook.py --top "${{ github.event.inputs.top || '50' }}"
+
+      - name: commit vetted + picks
+        run: |
+          git config user.name "gh-vet"
+          git config user.email "gh-vet@users.noreply.github.com"
+          mkdir -p /tmp/vo/shadow
+          cp -f results/vetted.jsonl results/scoreboard.json results/drainer_block.jsonl /tmp/vo/ 2>/dev/null || true
+          cp -f shadow/picks.jsonl shadow/picks.txt /tmp/vo/shadow/ 2>/dev/null || true
+          for i in 1 2 3 4 5; do
+            git fetch -q origin main || true
+            git reset -q --hard origin/main || true
+            mkdir -p results shadow
+            cp -f /tmp/vo/vetted.jsonl /tmp/vo/scoreboard.json /tmp/vo/drainer_block.jsonl results/ 2>/dev/null || true
+            cp -f /tmp/vo/shadow/picks.jsonl /tmp/vo/shadow/picks.txt shadow/ 2>/dev/null || true
+            git add -A results shadow
+            git commit -q -m "vet: vetted+picks $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
+            if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
+            echo "push raced, retry $i"; sleep 3
+          done
