@@ -1,16 +1,17 @@
 name: venues
-# Non-HL copy-lead lanes (gtrade first; ostium PARKED — venue halted 2026-07-15 oracle exploit).
-# Sharded discovery+fills+vet on GH runners, off the home line. One venue-agnostic script drives
-# every lane: vet/gh_venue.py --venue X. Output schema is identical to the HL lane, so the
-# open-book pass / picks / shadow / scoreboard treat all venues as ONE board.
+# Non-HL copy-lead lanes. Sharded discovery+fills+vet on GH runners, off the home line.
+# ONE venue-agnostic script drives every lane (vet/gh_venue.py --venue X); output schema is
+# identical to the HL lane, so the open-book pass / picks / shadow / scoreboard treat all
+# venues as ONE board. Non-HL leads are pinned WATCH (no venue-specific hider check yet).
+#
+# ostium is deliberately ABSENT — venue halted 2026-07-15 (oracle-key exploit); adapter + lane
+# exist and work, re-add it to the matrix if it ever resumes (and treat pre-halt fills as
+# oracle-contaminated).
 on:
   workflow_dispatch:
     inputs:
-      venue:
-        description: "venue lane (gtrade | dydx | pacifica | ostium ...)"
-        default: "gtrade"
       limit:
-        description: "top-N traders to discover"
+        description: "top-N traders to discover per venue"
         default: "800"
   schedule:
     - cron: "40 7 * * *"     # after hl-sweep, before the 08:00 vet
@@ -19,7 +20,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: venues-${{ github.event.inputs.venue || 'gtrade' }}
+  group: venues
   cancel-in-progress: false
 
 jobs:
@@ -29,6 +30,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        venue: [gtrade, pacifica]
         shard: [0,1,2,3,4,5,6,7,8,9]
     steps:
       - uses: actions/checkout@v4
@@ -46,18 +48,17 @@ jobs:
           python-version: "3.11"
       - name: deps
         run: pip install requests
-      - name: vet shard ${{ matrix.shard }}
+      - name: vet ${{ matrix.venue }} shard ${{ matrix.shard }}
         env:
-          VENUE: ${{ github.event.inputs.venue || 'gtrade' }}
           LIMIT: ${{ github.event.inputs.limit || '800' }}
         run: |
-          python3 vet/gh_venue.py --venue "$VENUE" --limit "$LIMIT" \
+          python3 vet/gh_venue.py --venue "${{ matrix.venue }}" --limit "$LIMIT" \
             --shard ${{ matrix.shard }} --shards 10 \
-            --out "shard_${{ matrix.shard }}.jsonl"
+            --out "shard_${{ matrix.venue }}_${{ matrix.shard }}.jsonl"
       - uses: actions/upload-artifact@v4
         with:
-          name: "venue-shard-${{ matrix.shard }}"
-          path: "shard_${{ matrix.shard }}.jsonl"
+          name: "venue-${{ matrix.venue }}-${{ matrix.shard }}"
+          path: "shard_${{ matrix.venue }}_${{ matrix.shard }}.jsonl"
           if-no-files-found: warn
 
   collect:
@@ -71,24 +72,26 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           path: _artifacts
-          pattern: "venue-shard-*"
+          pattern: "venue-*"
           merge-multiple: true
-      - name: merge + commit
-        env:
-          VENUE: ${{ github.event.inputs.venue || 'gtrade' }}
+      - name: merge per venue + commit
         run: |
           git config user.name "gh-venue"
           git config user.email "gh-venue@users.noreply.github.com"
           mkdir -p /tmp/vo
-          cat _artifacts/*.jsonl 2>/dev/null | sort -u > "/tmp/vo/vetted_${VENUE}.jsonl" || true
-          echo "merged $(wc -l < "/tmp/vo/vetted_${VENUE}.jsonl") copyable ${VENUE} leads"
+          for V in gtrade pacifica; do
+            cat _artifacts/shard_${V}_*.jsonl 2>/dev/null | sort -u > "/tmp/vo/vetted_${V}.jsonl" || true
+            echo "${V}: $(wc -l < "/tmp/vo/vetted_${V}.jsonl" 2>/dev/null || echo 0) copyable leads"
+          done
           for i in 1 2 3 4 5; do
             git fetch -q origin main || true
             git reset -q --hard origin/main || true
             mkdir -p results
-            cp -f "/tmp/vo/vetted_${VENUE}.jsonl" "results/vetted_${VENUE}.jsonl" 2>/dev/null || true
+            for V in gtrade pacifica; do
+              cp -f "/tmp/vo/vetted_${V}.jsonl" "results/vetted_${V}.jsonl" 2>/dev/null || true
+            done
             git add -A results
-            git commit -q -m "venues: ${VENUE} vetted $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
+            git commit -q -m "venues: gtrade+pacifica vetted $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
             echo "push raced, retry $i"; sleep 3
           done
