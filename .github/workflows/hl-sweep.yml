@@ -4,6 +4,8 @@ name: hl-sweep
 # back to results/all.jsonl — so the LXC just `git pull` (token-free) and runs gh_ingest.py.
 # Trigger: tap "Run workflow" in the GitHub mobile app (Actions tab). Full ~5k pool in ~10-12 min.
 on:
+  schedule:
+    - cron: "0 6 * * *"    # self-scheduled on GH (replaced the LXC dispatch cron, full-cut 2026-07-19)
   workflow_dispatch:       # DISPATCH-ONLY. Full sweep = defaults. Incremental = pool_file=sweep_targets.txt
                            # + pool_only=1 (net-new + roster-recheck slice from build_sweep_targets.py).
     inputs:

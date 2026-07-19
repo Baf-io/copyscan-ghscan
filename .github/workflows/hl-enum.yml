@@ -67,6 +67,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
       - uses: actions/download-artifact@v4
         with:
           path: _artifacts
@@ -88,7 +91,9 @@ jobs:
             rm -f results/enum_all.jsonl
             jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | tr 'A-Z' 'a-z' | grep '^0x' | sort -u > "results/enum_${{ github.run_id }}.txt" || true
             echo "run ${{ github.run_id }}: enumerated $(wc -l < "results/enum_${{ github.run_id }}.txt") distinct addrs (venue=$VENUE) at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > results/ENUM_LATEST.txt
-            git add -A results
+            # grow the sweep pool ON GH (MM-throttled + deduped) — no LXC ingest in the loop
+            python3 tools/pool_merge.py _artifacts --pool extra_addrs.txt --known pool_full.txt || true
+            git add -A results extra_addrs.txt
             git commit -q -m "enum results venue=$VENUE run ${{ github.run_id }} [skip ci]" || { echo "no changes to commit"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
             echo "push raced, retry $i"; sleep 3
