@@ -12,7 +12,7 @@ on:
     inputs:
       limit:
         description: "top-N traders to discover per venue"
-        default: "800"
+        default: "2500"
   schedule:
     - cron: "40 7 * * *"     # after hl-sweep, before the 08:00 vet
 
@@ -50,7 +50,9 @@ jobs:
         run: pip install requests
       - name: vet ${{ matrix.venue }} shard ${{ matrix.shard }}
         env:
-          LIMIT: ${{ github.event.inputs.limit || '800' }}
+          # Pacifica's leaderboard holds ~6,861 ranked traders — 800 was leaving most of the pool
+          # unsampled. gtrade (~363 roster) and orderly cap out at their natural sizes regardless.
+          LIMIT: ${{ github.event.inputs.limit || '2500' }}
           # History page caps. Defaults silently TRUNCATED deep-history traders: pacifica capped at
           # 3000 rows reconstructed a lead's PnL at 1230 vs the venue's own 4712 (26%). Raised caps
           # closed it to 4745 vs 4712 (100.7%). Adapters log when a cap actually binds.
