@@ -51,6 +51,12 @@ jobs:
       - name: vet ${{ matrix.venue }} shard ${{ matrix.shard }}
         env:
           LIMIT: ${{ github.event.inputs.limit || '800' }}
+          # History page caps. Defaults silently TRUNCATED deep-history traders: pacifica capped at
+          # 3000 rows reconstructed a lead's PnL at 1230 vs the venue's own 4712 (26%). Raised caps
+          # closed it to 4745 vs 4712 (100.7%). Adapters log when a cap actually binds.
+          PACIFICA_MAX_PAGES: "60"
+          GTRADE_MAX_PAGES: "40"
+          ORDERLY_MAX_PAGES: "40"
         run: |
           python3 vet/gh_venue.py --venue "${{ matrix.venue }}" --limit "$LIMIT" \
             --shard ${{ matrix.shard }} --shards 10 \
