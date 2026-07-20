@@ -32,6 +32,7 @@ def fnum(v, pfx="", suf=""):
 def render(root):
     sb = load_json(os.path.join(root, "results", "scoreboard.json"))
     summ = {s["addr"]: s for s in load_jsonl(os.path.join(root, "shadow", "summary.jsonl"))}
+    pnl = {s["addr"]: s for s in load_jsonl(os.path.join(root, "shadow", "pnl_summary.jsonl"))}
     rows = sb.get("rows", [])
     ts = sb.get("ts") or int(time.time())
 
@@ -39,11 +40,15 @@ def render(root):
     for r in rows:
         a = r.get("addr")
         s = summ.get(a, {})
-        merged.append({**r, "fwd_days": s.get("days_tracked"), "fwd_trips": s.get("n_fwd_trips"),
-                       "cum_our_E": s.get("cum_our_E"), "promote": bool(s.get("promote"))})
-    # promotions first, then BOARD, WATCH, REJECT; within, by forward cum then vet score
+        p = pnl.get(a, {})
+        merged.append({**r, "fwd_days": p.get("days", s.get("days_tracked")),
+                       "pnl_net": p.get("net_usd"), "pnl_ret": p.get("cur_ret_pct"),
+                       "pnl_dd": p.get("max_dd_pct"), "fwd_fills": p.get("n_fwd_fills"),
+                       "cum_our_E": s.get("cum_our_E"), "promote": bool(s.get("promote") or p.get("promote"))})
+    # promotions first, then BOARD, WATCH, REJECT; within, by forward return then vet score
     merged.sort(key=lambda x: (0 if x["promote"] else 1, ORDER.get(x.get("verdict"), 4),
-                               -(x.get("cum_our_E") or -9e9), -(x.get("score") or 0)))
+                               -(x.get("pnl_ret") if x.get("pnl_ret") is not None else -9e9),
+                               -(x.get("score") or 0)))
 
     from collections import Counter
     vc = Counter(r.get("verdict") for r in rows)
@@ -73,12 +78,13 @@ def render(root):
             f'<td class="num">{fnum(m.get("av"), "$")}</td>'
             f'<td class="num">{fnum(m.get("r30"), "$")}</td>'
             f'<td class="num">{("%.1f" % m["fwd_days"]) if m.get("fwd_days") is not None else "—"}</td>'
-            f'<td class="num">{m.get("fwd_trips") if m.get("fwd_trips") is not None else "—"}</td>'
-            f'<td class="num {oe_cls}">{("%+.2f%%" % oe) if oe is not None else "—"}</td>'
+            f'<td class="num {("pos" if (m.get("pnl_net") or 0) > 0 else ("neg" if (m.get("pnl_net") or 0) < 0 else ""))}">{fnum(m.get("pnl_net"), "$")}</td>'
+            f'<td class="num {("pos" if (m.get("pnl_ret") or 0) > 0 else ("neg" if (m.get("pnl_ret") or 0) < 0 else ""))}">{(("%+.2f%%" % m["pnl_ret"]) if m.get("pnl_ret") is not None else "—")}</td>'
+            f'<td class="num">{(("%.1f%%" % m["pnl_dd"]) if m.get("pnl_dd") is not None else "—")}</td>'
             f'<td class="why">{why}</td>'
             "</tr>")
 
-    body = "\n".join(trs) or '<tr><td colspan="10" class="dim" style="text-align:center;padding:32px">no candidates yet — awaiting first full vet</td></tr>'
+    body = "\n".join(trs) or '<tr><td colspan="11" class="dim" style="text-align:center;padding:32px">no candidates yet — awaiting first full vet</td></tr>'
 
     return TEMPLATE.format(
         updated=updated, n=len(rows), board=vc.get("BOARD", 0), watch=vc.get("WATCH", 0) + vc.get("BOARDED", 0),
@@ -135,7 +141,7 @@ TEMPLATE = """<!doctype html>
  </div>
  <div class="tblwrap"><table>
   <thead><tr><th>#</th><th>verdict</th><th>lead</th><th>copyable</th><th>acct $</th><th>30d $</th>
-   <th>fwd days</th><th>fwd trips</th><th>cum our&nbsp;E</th><th>note</th></tr></thead>
+   <th>fwd days</th><th>fwd P&amp;L</th><th>ret&nbsp;%</th><th>max dd</th><th>note</th></tr></thead>
   <tbody>
 {rows}
   </tbody>
@@ -143,8 +149,8 @@ TEMPLATE = """<!doctype html>
  <div class="foot">
   <b>Method:</b> off-IP GitHub-Actions runners fetch lead fills (never the home HL budget) → offline forensic vet →
   live open-book loss-hider filter → top picks forward-tracked with the pipeline's own copy-sim. <br>
-  <b>PROMOTE</b> = ≥14 days forward · ≥10 forward trips · positive cumulative our&nbsp;E (paper). Vetting engine is private;
-  only the board is published. <code>cum our E</code> = per-trip first-entry return − entry-lag − spread, summed.
+  <b>PROMOTE</b> = ≥14 days forward · ≥8 forward fills · positive forward P&amp;L · max drawdown ≤20% (position-mirror, marked to market). Vetting engine is private;
+  only the board is published. <code>fwd P&amp;L</code> = a copier seeded at the pick-time mark, mirroring the lead's forward fills, marked live; <code>ret&nbsp;%</code> is on peak deployed notional.
  </div>
 </div></body></html>
 """
