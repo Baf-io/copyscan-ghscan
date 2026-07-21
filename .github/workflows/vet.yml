@@ -16,6 +16,9 @@ on:
       max_shards:
         description: "test aid: vet only first K sweep shards (0 = all 20)"
         default: "0"
+      openbook_only:
+        description: "skip the 1h offline vet; re-run only open-book + pick selection over committed vetted*.jsonl"
+        default: "false"
   schedule:
     - cron: "0 8 * * *"     # ~2h after the 06:00 hl-sweep; vets the latest successful sweep
 
@@ -49,6 +52,7 @@ jobs:
 
       - name: resolve hl-sweep run id
         id: rid
+        if: github.event.inputs.openbook_only != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -60,6 +64,7 @@ jobs:
           echo "vetting hl-sweep run $RID"
 
       - name: offline vet (zero live HL)
+        if: github.event.inputs.openbook_only != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           GHSCAN_REPO: ${{ github.repository }}
