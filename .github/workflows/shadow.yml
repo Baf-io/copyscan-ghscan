@@ -43,17 +43,20 @@ jobs:
       - name: forward P&L tick — mark-to-market realized+open (runner IP, off home budget)
         run: python3 vet/gh_shadow_pnl.py
 
-      - name: commit ledger + summary + pnl
+      - name: portfolio allocator — blend leads into ONE copy-portfolio curve (Kelly x corr, no HL calls)
+        run: python3 vet/gh_allocator.py
+
+      - name: commit ledger + summary + pnl + portfolio
         run: |
           git config user.name "gh-shadow"
           git config user.email "gh-shadow@users.noreply.github.com"
           mkdir -p /tmp/so
-          cp -f shadow/ledger.jsonl shadow/summary.jsonl shadow/pnl_ticks.jsonl shadow/pnl_summary.jsonl /tmp/so/ 2>/dev/null || true
+          cp -f shadow/ledger.jsonl shadow/summary.jsonl shadow/pnl_ticks.jsonl shadow/pnl_summary.jsonl shadow/portfolio_curve.jsonl shadow/portfolio.json /tmp/so/ 2>/dev/null || true
           for i in 1 2 3 4 5; do
             git fetch -q origin main || true
             git reset -q --hard origin/main || true
             mkdir -p shadow
-            cp -f /tmp/so/ledger.jsonl /tmp/so/summary.jsonl /tmp/so/pnl_ticks.jsonl /tmp/so/pnl_summary.jsonl shadow/ 2>/dev/null || true
+            cp -f /tmp/so/ledger.jsonl /tmp/so/summary.jsonl /tmp/so/pnl_ticks.jsonl /tmp/so/pnl_summary.jsonl /tmp/so/portfolio_curve.jsonl /tmp/so/portfolio.json shadow/ 2>/dev/null || true
             git add -A shadow
             git commit -q -m "shadow: forward tick $(date -u +%FT%TZ) [skip ci]" || { echo "no changes"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
