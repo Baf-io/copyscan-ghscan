@@ -33,6 +33,7 @@ def render(root):
     sb = load_json(os.path.join(root, "results", "scoreboard.json"))
     summ = {s["addr"]: s for s in load_jsonl(os.path.join(root, "shadow", "summary.jsonl"))}
     pnl = {s["addr"]: s for s in load_jsonl(os.path.join(root, "shadow", "pnl_summary.jsonl"))}
+    port = load_json(os.path.join(root, "shadow", "portfolio.json"))   # ② blended copy-portfolio
     rows = sb.get("rows", [])
     ts = sb.get("ts") or int(time.time())
 
@@ -86,9 +87,18 @@ def render(root):
 
     body = "\n".join(trs) or '<tr><td colspan="11" class="dim" style="text-align:center;padding:32px">no candidates yet — awaiting first full vet</td></tr>'
 
+    pr = port.get("cum_ret_pct")
+    ps = port.get("sharpe_ann")
+    pdd = port.get("max_dd_pct")
     return TEMPLATE.format(
         updated=updated, n=len(rows), board=vc.get("BOARD", 0), watch=vc.get("WATCH", 0) + vc.get("BOARDED", 0),
-        reject=vc.get("REJECT", 0), prom=n_prom, rows=body)
+        reject=vc.get("REJECT", 0), prom=n_prom, rows=body,
+        port_ret=(("%+.2f%%" % pr) if pr is not None else "—"),
+        port_cls=("pos" if (pr or 0) > 0 else ("neg" if (pr or 0) < 0 else "")),
+        port_sharpe=(("%.2f" % ps) if ps is not None else "—"),
+        port_dd=(("%.2f%%" % pdd) if pdd is not None else "—"),
+        port_active=port.get("n_active", 0),
+        port_method=html.escape(str(port.get("method", "—"))))
 
 
 TEMPLATE = """<!doctype html>
@@ -139,6 +149,13 @@ TEMPLATE = """<!doctype html>
   <div class="stat"><div class="k">watch</div><div class="v">{watch}</div></div>
   <div class="stat"><div class="k">rejected</div><div class="v">{reject}</div></div>
  </div>
+ <div class="stats">
+  <div class="stat" style="border-color:#2f6f4f"><div class="k">◆ copy-portfolio return</div><div class="v {port_cls}">{port_ret}</div></div>
+  <div class="stat"><div class="k">port sharpe (ann)</div><div class="v">{port_sharpe}</div></div>
+  <div class="stat"><div class="k">port max dd</div><div class="v">{port_dd}</div></div>
+  <div class="stat"><div class="k">leads in book</div><div class="v">{port_active}</div></div>
+ </div>
+ <div class="sub" style="margin-top:-6px">② blended copy-portfolio · weighting: <b>{port_method}</b> · forward-Kelly × correlation-tax once the cohort matures</div>
  <div class="tblwrap"><table>
   <thead><tr><th>#</th><th>verdict</th><th>lead</th><th>copyable</th><th>acct $</th><th>30d $</th>
    <th>fwd days</th><th>fwd P&amp;L</th><th>ret&nbsp;%</th><th>max dd</th><th>note</th></tr></thead>
