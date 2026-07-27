@@ -1,20 +1,21 @@
 {
- "ts": 1785125191,
+ "ts": 1785156283,
  "method": "forward-Kelly x corr-tax",
- "n_active": 10,
+ "n_active": 11,
  "n_mature": 9,
- "cum_ret_pct": 1.7993,
- "max_dd_pct": 0.3403,
- "sharpe_ann": 11.037,
- "n_points": 26,
+ "cum_ret_pct": 2.6155,
+ "max_dd_pct": 0.3435,
+ "sharpe_ann": 11.323,
+ "n_points": 27,
  "weights": {
   "0x0c5ba524dd2e2453e63cda7fe2b9c8755ca0f5c9": 0.0,
-  "0x22dfa5d3751aa194a119a4eaebce903cc5a635b5": 0.3333,
+  "0x22dfa5d3751aa194a119a4eaebce903cc5a635b5": 0.5,
   "0x2c8472e807372f7cb7d318efc9811a891f8e1b08": 0.0,
-  "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e": 0.3333,
+  "0x2ce673a51a1fd838c2ee2bf6912d320ca340a5c5": 0.0,
+  "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e": 0.5,
   "0x5b134297a8999e4838091aec51dd6729862dec0d": 0.0,
   "0x7a7e3d7ecc6d22fd0daddb6f703f3ed30ca674ae": 0.0,
-  "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43": 0.3333,
+  "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43": 0.0,
   "0x9f68de8f621547da9040ade94e4811916597b445": 0.0,
   "0xb29dcc38ed9e8e53051ccbb541601ae61437f100": 0.0,
   "0xfac6c2ab9b9e0ed61aea388eb1e7f755811b9fa3": 0.0
@@ -22,44 +23,33 @@
  "leads": [
   {
    "addr": "0x22dfa5d3751aa194a119a4eaebce903cc5a635b5",
-   "w": 0.3333,
+   "w": 0.5,
    "cum_ret_pct": 5.065,
-   "samples": 23,
-   "days": 5.62,
-   "crowd": 0.547,
+   "samples": 24,
+   "days": 5.98,
+   "crowd": 0.552,
    "coins": [
     "ZEC"
    ]
   },
   {
    "addr": "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e",
-   "w": 0.3333,
-   "cum_ret_pct": 0.596,
-   "samples": 23,
-   "days": 5.62,
-   "crowd": 1.188,
+   "w": 0.5,
+   "cum_ret_pct": 0.166,
+   "samples": 24,
+   "days": 5.98,
+   "crowd": 1.18,
    "coins": [
     "HYPE"
    ]
   },
   {
-   "addr": "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43",
-   "w": 0.3333,
-   "cum_ret_pct": -0.263,
-   "samples": 23,
-   "days": 5.62,
-   "crowd": 1.475,
-   "coins": [
-    "ETH"
-   ]
-  },
-  {
    "addr": "0x0c5ba524dd2e2453e63cda7fe2b9c8755ca0f5c9",
    "w": 0.0,
-   "cum_ret_pct": -4.489,
-   "samples": 19,
-   "days": 3.69,
-   "crowd": 0.676,
+   "cum_ret_pct": -4.927,
+   "samples": 20,
+   "days": 4.05,
+   "crowd": 0.681,
    "coins": [
     "SPX",
     "ZEC"
@@ -68,10 +58,21 @@
   {
    "addr": "0x2c8472e807372f7cb7d318efc9811a891f8e1b08",
    "w": 0.0,
-   "cum_ret_pct": -8.307,
-   "samples": 23,
-   "days": 5.62,
-   "crowd": 2.201,
+   "cum_ret_pct": -8.716,
+   "samples": 24,
+   "days": 5.98,
+   "crowd": 2.179,
+   "coins": [
+    "HYPE"
+   ]
+  },
+  {
+   "addr": "0x2ce673a51a1fd838c2ee2bf6912d320ca340a5c5",
+   "w": 0.0,
+   "cum_ret_pct": -0.494,
+   "samples": 1,
+   "days": 5.98,
+   "crowd": 0.0,
    "coins": [
     "HYPE"
    ]
@@ -80,9 +81,9 @@
    "addr": "0x5b134297a8999e4838091aec51dd6729862dec0d",
    "w": 0.0,
    "cum_ret_pct": -0.004,
-   "samples": 20,
-   "days": 5.62,
-   "crowd": 0.744,
+   "samples": 21,
+   "days": 5.98,
+   "crowd": 0.718,
    "coins": [
     "HYPE"
    ]
@@ -90,21 +91,32 @@
   {
    "addr": "0x7a7e3d7ecc6d22fd0daddb6f703f3ed30ca674ae",
    "w": 0.0,
-   "cum_ret_pct": 0.682,
-   "samples": 26,
-   "days": 6.67,
-   "crowd": 1.949,
+   "cum_ret_pct": 0.14,
+   "samples": 27,
+   "days": 7.03,
+   "crowd": 1.965,
    "coins": [
     "HYPE"
+   ]
+  },
+  {
+   "addr": "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43",
+   "w": 0.0,
+   "cum_ret_pct": -0.469,
+   "samples": 24,
+   "days": 5.98,
+   "crowd": 1.515,
+   "coins": [
+    "ETH"
    ]
   },
   {
    "addr": "0x9f68de8f621547da9040ade94e4811916597b445",
    "w": 0.0,
    "cum_ret_pct": -1.946,
-   "samples": 26,
-   "days": 6.67,
-   "crowd": 1.235,
+   "samples": 27,
+   "days": 7.03,
+   "crowd": 1.206,
    "coins": [
     "HYPE"
    ]
@@ -123,10 +135,10 @@
   {
    "addr": "0xfac6c2ab9b9e0ed61aea388eb1e7f755811b9fa3",
    "w": 0.0,
-   "cum_ret_pct": 0.093,
-   "samples": 20,
-   "days": 5.62,
-   "crowd": 0.962,
+   "cum_ret_pct": -0.123,
+   "samples": 21,
+   "days": 5.98,
+   "crowd": 0.961,
    "coins": [
     "HYPE"
    ]
