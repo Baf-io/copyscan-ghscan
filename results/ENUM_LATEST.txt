@@ -1,1 +1,1 @@
-run 30434096653: enumerated 3666 distinct addrs (venue=hl) at 2026-07-29T08:10:45Z; raw shard jsonl in run artifacts
+run 30524569625: enumerated 4118 distinct addrs (venue=hl) at 2026-07-30T07:59:56Z; raw shard jsonl in run artifacts
