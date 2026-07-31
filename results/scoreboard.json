@@ -1,7 +1,7 @@
 {
- "ts": 1785411215,
+ "ts": 1785499076,
  "n": 28,
- "n_picks": 17,
+ "n_picks": 19,
  "rows": [
   {
    "addr": "0x9f68de8f621547da9040ade94e4811916597b445",
@@ -13,7 +13,7 @@
    "sr_ann": 5.7,
    "dsr_daily": 0.026,
    "net": 1109,
-   "recency_d": 12.4,
+   "recency_d": 13.4,
    "copyable_coins": [
     "HYPE"
    ],
@@ -29,18 +29,18 @@
     }
    },
    "score": 2.368,
-   "vetted_at": 1785410472,
+   "vetted_at": 1785498331,
    "src": "gh-vet",
-   "av": 8256,
+   "av": 8143,
    "open": 5,
-   "open_upnl": 755,
-   "worst_roe": 6.6,
-   "r7": -108,
-   "r30": -133,
-   "r90": 1237,
-   "r400": 613,
-   "nfills_400d": 200,
-   "last_d": 2.8,
+   "open_upnl": 641,
+   "worst_roe": -0.2,
+   "r7": -30,
+   "r30": -81,
+   "r90": 1289,
+   "r400": 665,
+   "nfills_400d": 202,
+   "last_d": 0.0,
    "verdict": "WATCH",
    "why": "borderline -- thin/unconfirmed edge, forward-track",
    "shadow_only": false,
@@ -56,7 +56,7 @@
    "sr_ann": 4.45,
    "dsr_daily": 0.033,
    "net": 129,
-   "recency_d": 11.2,
+   "recency_d": 12.3,
    "copyable_coins": [
     "SPCX"
    ],
@@ -72,22 +72,65 @@
     }
    },
    "score": 0.696,
-   "vetted_at": 1785410551,
+   "vetted_at": 1785498403,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
    "open_upnl": 0,
    "worst_roe": 0.0,
-   "r7": -106,
-   "r30": 178,
-   "r90": 345,
-   "r400": 251,
-   "nfills_400d": 768,
-   "last_d": 0.6,
+   "r7": -118,
+   "r30": 193,
+   "r90": 385,
+   "r400": 290,
+   "nfills_400d": 776,
+   "last_d": 0.9,
    "verdict": "WATCH",
    "why": "trade-and-withdraw: flat now but active + 30d green",
    "shadow_only": false,
    "picked_ts": 1784548521639
+  },
+  {
+   "addr": "0x7a7e3d7ecc6d22fd0daddb6f703f3ed30ca674ae",
+   "venue": "hl",
+   "tier": "WATCH",
+   "span_d": 59.3,
+   "n_fills": 1148,
+   "wr_all_trips": 40,
+   "sr_ann": 1.71,
+   "dsr_daily": 0.002,
+   "net": 1701,
+   "recency_d": 12.9,
+   "copyable_coins": [
+    "HYPE"
+   ],
+   "coins": {
+    "HYPE": {
+     "our_E_pct": 0.598,
+     "rr": 2.6,
+     "bracket_rr": 2.77,
+     "sl_pct": 0.0215,
+     "n_trips": 87,
+     "hold_h": 6.8,
+     "spread_rt_bp": 3.11
+    }
+   },
+   "score": 0.598,
+   "vetted_at": 1785498590,
+   "src": "gh-vet",
+   "av": 0,
+   "open": 0,
+   "open_upnl": 0,
+   "worst_roe": 0.0,
+   "r7": -707,
+   "r30": -997,
+   "r90": 1895,
+   "r400": 1895,
+   "nfills_400d": 1367,
+   "last_d": 0.2,
+   "verdict": "WATCH",
+   "why": "borderline -- thin/unconfirmed edge, forward-track",
+   "shadow_only": false,
+   "picked_ts": 1785499010665
   },
   {
    "addr": "0x12bc88a8977ae4a8a68d292d8268bdfdfa513c1e",
@@ -99,7 +142,7 @@
    "sr_ann": 2.46,
    "dsr_daily": 0.039,
    "net": 376,
-   "recency_d": 12.9,
+   "recency_d": 14.0,
    "copyable_coins": [
     "NVDA"
    ],
@@ -115,18 +158,18 @@
     }
    },
    "score": 0.429,
-   "vetted_at": 1785410772,
+   "vetted_at": 1785498596,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
    "open_upnl": 0,
    "worst_roe": 0.0,
    "r7": 111,
-   "r30": 206,
-   "r90": 332,
+   "r30": 184,
+   "r90": 371,
    "r400": 715,
    "nfills_400d": 1401,
-   "last_d": 0.1,
+   "last_d": 1.1,
    "verdict": "WATCH",
    "why": "trade-and-withdraw: flat now but active + 30d green",
    "shadow_only": false,
@@ -142,7 +185,7 @@
    "sr_ann": 10.51,
    "dsr_daily": 0.388,
    "net": 3053,
-   "recency_d": 13.1,
+   "recency_d": 14.1,
    "copyable_coins": [
     "ETH"
    ],
@@ -158,7 +201,7 @@
     }
    },
    "score": 0.382,
-   "vetted_at": 1785410841,
+   "vetted_at": 1785498670,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -169,7 +212,7 @@
    "r90": 3268,
    "r400": 3507,
    "nfills_400d": 757,
-   "last_d": 0.4,
+   "last_d": 1.4,
    "verdict": "WATCH",
    "why": "borderline -- thin/unconfirmed edge, forward-track",
    "shadow_only": false,
@@ -185,7 +228,7 @@
    "sr_ann": 1.77,
    "dsr_daily": 0.014,
    "net": 188,
-   "recency_d": 6.9,
+   "recency_d": 7.9,
    "copyable_coins": [
     "ETH"
    ],
@@ -201,7 +244,7 @@
     }
    },
    "score": 0.373,
-   "vetted_at": 1785328327,
+   "vetted_at": 1785412995,
    "src": "gh-pacifica",
    "av": null,
    "open": 0,
@@ -222,7 +265,7 @@
    "sr_ann": 8.32,
    "dsr_daily": 0.205,
    "net": 13623,
-   "recency_d": 11.9,
+   "recency_d": 13.0,
    "copyable_coins": [
     "DRAM"
    ],
@@ -238,7 +281,7 @@
     }
    },
    "score": 0.35,
-   "vetted_at": 1785410979,
+   "vetted_at": 1785498823,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -249,7 +292,7 @@
    "r90": 14319,
    "r400": 14081,
    "nfills_400d": 1316,
-   "last_d": 7.9,
+   "last_d": 8.9,
    "verdict": "WATCH",
    "why": "borderline -- thin/unconfirmed edge, forward-track",
    "shadow_only": false,
@@ -265,7 +308,7 @@
    "sr_ann": 6.54,
    "dsr_daily": 0.259,
    "net": 5966,
-   "recency_d": 13.5,
+   "recency_d": 14.5,
    "copyable_coins": [
     "ZEC"
    ],
@@ -281,18 +324,18 @@
     }
    },
    "score": 3.271,
-   "vetted_at": 1785410932,
+   "vetted_at": 1785498774,
    "src": "gh-vet",
-   "av": 1505,
-   "open": 0,
-   "open_upnl": 0,
-   "worst_roe": 0.0,
+   "av": 6394,
+   "open": 1,
+   "open_upnl": -130,
+   "worst_roe": -3.2,
    "r7": 0,
    "r30": 0,
    "r90": 0,
-   "r400": 17113,
+   "r400": 16221,
    "nfills_400d": 2000,
-   "last_d": 138.6,
+   "last_d": 139.6,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -308,7 +351,7 @@
    "sr_ann": 1.25,
    "dsr_daily": 0.002,
    "net": 1516,
-   "recency_d": 11.9,
+   "recency_d": 12.9,
    "copyable_coins": [
     "SPX",
     "ZEC"
@@ -334,7 +377,7 @@
     }
    },
    "score": 3.056,
-   "vetted_at": 1785410426,
+   "vetted_at": 1785498285,
    "src": "gh-vet",
    "av": 15091,
    "open": 0,
@@ -345,7 +388,7 @@
    "r90": 0,
    "r400": 239416,
    "nfills_400d": 2000,
-   "last_d": 196.3,
+   "last_d": 197.4,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -361,7 +404,7 @@
    "sr_ann": 10.94,
    "dsr_daily": 0.707,
    "net": 2967,
-   "recency_d": 11.3,
+   "recency_d": 12.3,
    "copyable_coins": [
     "ETH",
     "ZEC"
@@ -387,20 +430,20 @@
     }
    },
    "score": 2.526,
-   "vetted_at": 1785411014,
+   "vetted_at": 1785498861,
    "src": "gh-vet",
-   "av": 7060,
+   "av": 7306,
    "open": 4,
-   "open_upnl": -3834,
-   "worst_roe": -123.6,
+   "open_upnl": -3586,
+   "worst_roe": -112.0,
    "r7": 7,
    "r30": 1717,
    "r90": 3363,
    "r400": 3079,
    "nfills_400d": 951,
-   "last_d": 1.9,
+   "last_d": 2.9,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -124% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -112% ROE) = loss-hider"
   },
   {
    "addr": "0x07c38f7b7d3341e1c1d7fbe6f03ae7183bdf8684",
@@ -412,7 +455,7 @@
    "sr_ann": 4.15,
    "dsr_daily": 0.113,
    "net": 4056,
-   "recency_d": 11.7,
+   "recency_d": 12.7,
    "copyable_coins": [
     "NEAR"
    ],
@@ -428,18 +471,18 @@
     }
    },
    "score": 1.602,
-   "vetted_at": 1785410790,
+   "vetted_at": 1785498615,
    "src": "gh-vet",
-   "av": 4741,
-   "open": 2,
-   "open_upnl": 244,
-   "worst_roe": 6.9,
+   "av": 831,
+   "open": 0,
+   "open_upnl": 0,
+   "worst_roe": 0.0,
    "r7": 0,
    "r30": 0,
    "r90": 0,
-   "r400": -2131,
+   "r400": -1794,
    "nfills_400d": 2000,
-   "last_d": 387.9,
+   "last_d": 387.4,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -455,7 +498,7 @@
    "sr_ann": 3.76,
    "dsr_daily": 0.021,
    "net": 6668,
-   "recency_d": 13.0,
+   "recency_d": 14.0,
    "copyable_coins": [
     "HYPE"
    ],
@@ -471,7 +514,7 @@
     }
    },
    "score": 1.592,
-   "vetted_at": 1785410999,
+   "vetted_at": 1785498845,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -482,7 +525,7 @@
    "r90": 0,
    "r400": -14242,
    "nfills_400d": 2000,
-   "last_d": 254.9,
+   "last_d": 255.9,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -498,7 +541,7 @@
    "sr_ann": 4.16,
    "dsr_daily": 0.013,
    "net": 140835,
-   "recency_d": 13.9,
+   "recency_d": 14.9,
    "copyable_coins": [
     "MU"
    ],
@@ -514,7 +557,7 @@
     }
    },
    "score": 1.583,
-   "vetted_at": 1785410994,
+   "vetted_at": 1785498840,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -525,7 +568,7 @@
    "r90": 0,
    "r400": 83783,
    "nfills_400d": 2000,
-   "last_d": 266.1,
+   "last_d": 267.2,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -541,7 +584,7 @@
    "sr_ann": 0.46,
    "dsr_daily": 0.002,
    "net": 1228,
-   "recency_d": 12.4,
+   "recency_d": 13.4,
    "copyable_coins": [
     "HYPE"
    ],
@@ -557,20 +600,20 @@
     }
    },
    "score": 1.486,
-   "vetted_at": 1785411109,
+   "vetted_at": 1785498966,
    "src": "gh-vet",
-   "av": 9402,
-   "open": 29,
-   "open_upnl": -2012,
-   "worst_roe": -172.2,
-   "r7": 1116,
+   "av": 7798,
+   "open": 23,
+   "open_upnl": -2685,
+   "worst_roe": -186.9,
+   "r7": 1070,
    "r30": 1667,
    "r90": 3431,
    "r400": 3431,
    "nfills_400d": 2000,
-   "last_d": 2.9,
+   "last_d": 3.9,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -172% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -187% ROE) = loss-hider"
   },
   {
    "addr": "0xf8e66caad00b64c461f07543df5b93f2188014a6",
@@ -582,7 +625,7 @@
    "sr_ann": 0.99,
    "dsr_daily": 0.002,
    "net": 1655,
-   "recency_d": 12.9,
+   "recency_d": 13.9,
    "copyable_coins": [
     "MU"
    ],
@@ -598,20 +641,20 @@
     }
    },
    "score": 1.311,
-   "vetted_at": 1785410828,
+   "vetted_at": 1785498655,
    "src": "gh-vet",
-   "av": 5566,
+   "av": 7201,
    "open": 1,
-   "open_upnl": -18228,
-   "worst_roe": -167.1,
+   "open_upnl": -18451,
+   "worst_roe": -169.1,
    "r7": 0,
-   "r30": 4661,
+   "r30": 555,
    "r90": 2211,
    "r400": -11608,
    "nfills_400d": 2000,
-   "last_d": 28.6,
+   "last_d": 29.7,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -167% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -169% ROE) = loss-hider"
   },
   {
    "addr": "0x422c3cf3457a85e9f369242340c023a72a4d6374",
@@ -623,7 +666,7 @@
    "sr_ann": 4.82,
    "dsr_daily": 0.132,
    "net": 11638,
-   "recency_d": 11.4,
+   "recency_d": 12.4,
    "copyable_coins": [
     "XRP"
    ],
@@ -639,20 +682,22 @@
     }
    },
    "score": 1.009,
-   "vetted_at": 1785410929,
+   "vetted_at": 1785498770,
    "src": "gh-vet",
-   "av": 6366,
-   "open": 2,
-   "open_upnl": -279,
-   "worst_roe": -24.6,
+   "av": 0,
+   "open": 0,
+   "open_upnl": 0,
+   "worst_roe": 0.0,
    "r7": 0,
    "r30": 0,
-   "r90": 1489,
+   "r90": -11,
    "r400": 9958,
    "nfills_400d": 2000,
-   "last_d": 87.6,
+   "last_d": 88.6,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -25% ROE) = loss-hider"
+   "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
+   "shadow_only": true,
+   "picked_ts": 1785499010665
   },
   {
    "addr": "0xb29dcc38ed9e8e53051ccbb541601ae61437f100",
@@ -664,7 +709,7 @@
    "sr_ann": 5.31,
    "dsr_daily": 0.03,
    "net": 1177,
-   "recency_d": 11.8,
+   "recency_d": 12.8,
    "copyable_coins": [
     "HYPE"
    ],
@@ -680,20 +725,20 @@
     }
    },
    "score": 0.89,
-   "vetted_at": 1785410504,
+   "vetted_at": 1785498357,
    "src": "gh-vet",
-   "av": 1451,
+   "av": 667,
    "open": 2,
-   "open_upnl": -170,
-   "worst_roe": -28.4,
+   "open_upnl": -94,
+   "worst_roe": -57.2,
    "r7": 0,
    "r30": 0,
    "r90": 0,
    "r400": -3549,
    "nfills_400d": 2000,
-   "last_d": 262.3,
+   "last_d": 263.4,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -28% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -57% ROE) = loss-hider"
   },
   {
    "addr": "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e",
@@ -705,7 +750,7 @@
    "sr_ann": 3.91,
    "dsr_daily": 0.028,
    "net": 14836,
-   "recency_d": 11.9,
+   "recency_d": 12.9,
    "copyable_coins": [
     "HYPE"
    ],
@@ -721,18 +766,18 @@
     }
    },
    "score": 0.67,
-   "vetted_at": 1785411035,
+   "vetted_at": 1785498884,
    "src": "gh-vet",
-   "av": 3237,
-   "open": 1,
-   "open_upnl": -151,
-   "worst_roe": -4.4,
+   "av": 0,
+   "open": 0,
+   "open_upnl": 0,
+   "worst_roe": 0.0,
    "r7": 0,
    "r30": 0,
    "r90": 0,
    "r400": 27285,
    "nfills_400d": 2000,
-   "last_d": 348.8,
+   "last_d": 349.9,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -748,7 +793,7 @@
    "sr_ann": 3.34,
    "dsr_daily": 0.013,
    "net": 17832,
-   "recency_d": 11.6,
+   "recency_d": 12.6,
    "copyable_coins": [
     "ZEC"
    ],
@@ -764,7 +809,7 @@
     }
    },
    "score": 0.645,
-   "vetted_at": 1785411096,
+   "vetted_at": 1785498952,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -775,9 +820,9 @@
    "r90": 13609,
    "r400": 52925,
    "nfills_400d": 2000,
-   "last_d": 56.4,
+   "last_d": 57.4,
    "verdict": "REJECT",
-   "why": "dormant (last close 56.4d ago)"
+   "why": "dormant (last close 57.4d ago)"
   },
   {
    "addr": "0xfac6c2ab9b9e0ed61aea388eb1e7f755811b9fa3",
@@ -789,7 +834,7 @@
    "sr_ann": 1.83,
    "dsr_daily": 0.004,
    "net": 17723,
-   "recency_d": 26.3,
+   "recency_d": 27.3,
    "copyable_coins": [
     "HYPE"
    ],
@@ -805,63 +850,22 @@
     }
    },
    "score": 0.632,
-   "vetted_at": 1785411029,
+   "vetted_at": 1785498878,
    "src": "gh-vet",
-   "av": 20905,
+   "av": 21451,
    "open": 1,
-   "open_upnl": 18,
-   "worst_roe": 0.4,
+   "open_upnl": 1851,
+   "worst_roe": 60.8,
    "r7": 0,
    "r30": 0,
    "r90": 0,
-   "r400": 65385,
+   "r400": 64933,
    "nfills_400d": 2000,
-   "last_d": 354.4,
+   "last_d": 355.4,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
    "picked_ts": 1784639320517
-  },
-  {
-   "addr": "0x7a7e3d7ecc6d22fd0daddb6f703f3ed30ca674ae",
-   "venue": "hl",
-   "tier": "WATCH",
-   "span_d": 59.3,
-   "n_fills": 1148,
-   "wr_all_trips": 40,
-   "sr_ann": 1.71,
-   "dsr_daily": 0.002,
-   "net": 1701,
-   "recency_d": 11.9,
-   "copyable_coins": [
-    "HYPE"
-   ],
-   "coins": {
-    "HYPE": {
-     "our_E_pct": 0.598,
-     "rr": 2.6,
-     "bracket_rr": 2.77,
-     "sl_pct": 0.0215,
-     "n_trips": 87,
-     "hold_h": 6.8,
-     "spread_rt_bp": 3.11
-    }
-   },
-   "score": 0.598,
-   "vetted_at": 1785410765,
-   "src": "gh-vet",
-   "av": 1609,
-   "open": 1,
-   "open_upnl": -454,
-   "worst_roe": -22.0,
-   "r7": -646,
-   "r30": -1318,
-   "r90": 2239,
-   "r400": 2239,
-   "nfills_400d": 1331,
-   "last_d": 0.7,
-   "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -22% ROE) = loss-hider"
   },
   {
    "addr": "0x421349d8252db91af2f29b310d33020cb0ca2e97",
@@ -873,7 +877,7 @@
    "sr_ann": 2.36,
    "dsr_daily": 0.002,
    "net": 4292,
-   "recency_d": 13.9,
+   "recency_d": 14.9,
    "copyable_coins": [
     "HYPE"
    ],
@@ -889,7 +893,7 @@
     }
    },
    "score": 0.536,
-   "vetted_at": 1785411001,
+   "vetted_at": 1785498848,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -900,7 +904,7 @@
    "r90": 0,
    "r400": 3088,
    "nfills_400d": 2000,
-   "last_d": 122.6,
+   "last_d": 123.6,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -916,7 +920,7 @@
    "sr_ann": 2.31,
    "dsr_daily": 0.005,
    "net": 2201,
-   "recency_d": 11.8,
+   "recency_d": 12.8,
    "copyable_coins": [
     "ETH"
    ],
@@ -932,20 +936,20 @@
     }
    },
    "score": 0.51,
-   "vetted_at": 1785410753,
+   "vetted_at": 1785498576,
    "src": "gh-vet",
    "av": 1097,
    "open": 0,
    "open_upnl": 0,
    "worst_roe": 0.0,
    "r7": 0,
-   "r30": 1789,
+   "r30": 1757,
    "r90": 6506,
    "r400": 9579,
    "nfills_400d": 2000,
-   "last_d": 27.9,
+   "last_d": 28.9,
    "verdict": "REJECT",
-   "why": "dormant (last close 27.9d ago)"
+   "why": "dormant (last close 28.9d ago)"
   },
   {
    "addr": "0x2ce673a51a1fd838c2ee2bf6912d320ca340a5c5",
@@ -957,7 +961,7 @@
    "sr_ann": 3.35,
    "dsr_daily": 0.028,
    "net": 1857,
-   "recency_d": 12.8,
+   "recency_d": 13.8,
    "copyable_coins": [
     "HYPE"
    ],
@@ -973,7 +977,7 @@
     }
    },
    "score": 0.427,
-   "vetted_at": 1785410720,
+   "vetted_at": 1785498542,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -982,9 +986,9 @@
    "r7": 0,
    "r30": 0,
    "r90": 0,
-   "r400": 7970,
+   "r400": 7844,
    "nfills_400d": 2000,
-   "last_d": 311.1,
+   "last_d": 311.8,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -1000,7 +1004,7 @@
    "sr_ann": 2.69,
    "dsr_daily": 0.004,
    "net": 1382,
-   "recency_d": 13.0,
+   "recency_d": 14.1,
    "copyable_coins": [
     "ETH"
    ],
@@ -1016,7 +1020,7 @@
     }
    },
    "score": 0.343,
-   "vetted_at": 1785410732,
+   "vetted_at": 1785498555,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -1027,9 +1031,9 @@
    "r90": 2929,
    "r400": 2929,
    "nfills_400d": 2000,
-   "last_d": 37.3,
+   "last_d": 38.3,
    "verdict": "REJECT",
-   "why": "dormant (last close 37.3d ago)"
+   "why": "dormant (last close 38.3d ago)"
   },
   {
    "addr": "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43",
@@ -1041,7 +1045,7 @@
    "sr_ann": 9.15,
    "dsr_daily": 0.605,
    "net": 25770,
-   "recency_d": 13.0,
+   "recency_d": 14.0,
    "copyable_coins": [
     "ETH"
    ],
@@ -1057,7 +1061,7 @@
     }
    },
    "score": 0.321,
-   "vetted_at": 1785410535,
+   "vetted_at": 1785498387,
    "src": "gh-vet",
    "av": 0,
    "open": 0,
@@ -1068,7 +1072,7 @@
    "r90": 0,
    "r400": -2534,
    "nfills_400d": 2000,
-   "last_d": 128.8,
+   "last_d": 129.8,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -1084,7 +1088,7 @@
    "sr_ann": 3.27,
    "dsr_daily": 0.003,
    "net": 1038,
-   "recency_d": 11.7,
+   "recency_d": 12.7,
    "copyable_coins": [
     "HYPE"
    ],
@@ -1100,9 +1104,9 @@
     }
    },
    "score": 0.302,
-   "vetted_at": 1785411143,
+   "vetted_at": 1785499003,
    "src": "gh-vet",
-   "av": 1321,
+   "av": 1293,
    "open": 0,
    "open_upnl": 0,
    "worst_roe": 0.0,
@@ -1111,7 +1115,7 @@
    "r90": 0,
    "r400": 2895,
    "nfills_400d": 2000,
-   "last_d": 175.8,
+   "last_d": 176.8,
    "verdict": "REJECT",
    "why": "realized 30d & 90d both <= 0 (streak-peak faded)",
    "shadow_only": true,
@@ -1127,7 +1131,7 @@
    "sr_ann": 6.4,
    "dsr_daily": 0.032,
    "net": 22045,
-   "recency_d": 11.4,
+   "recency_d": 12.4,
    "copyable_coins": [
     "ETH"
    ],
@@ -1143,20 +1147,20 @@
     }
    },
    "score": 0.223,
-   "vetted_at": 1785410963,
+   "vetted_at": 1785498807,
    "src": "gh-vet",
-   "av": 14218,
+   "av": 13373,
    "open": 1,
-   "open_upnl": -12818,
-   "worst_roe": -76.5,
+   "open_upnl": -13654,
+   "worst_roe": -81.5,
    "r7": 0,
    "r30": 0,
    "r90": 7122,
    "r400": 93703,
    "nfills_400d": 2000,
-   "last_d": 80.0,
+   "last_d": 81.0,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -76% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -82% ROE) = loss-hider"
   },
   {
    "addr": "0x6502d4c917a76deb09d003032624693764502d66",
@@ -1168,7 +1172,7 @@
    "sr_ann": 7.21,
    "dsr_daily": 0.6,
    "net": 696,
-   "recency_d": 11.5,
+   "recency_d": 12.5,
    "copyable_coins": [
     "HYPE"
    ],
@@ -1184,20 +1188,20 @@
     }
    },
    "score": 0.063,
-   "vetted_at": 1785410846,
+   "vetted_at": 1785498675,
    "src": "gh-vet",
-   "av": 135,
+   "av": 136,
    "open": 3,
-   "open_upnl": 17,
-   "worst_roe": -34.9,
+   "open_upnl": 12,
+   "worst_roe": -31.5,
    "r7": 0,
    "r30": 0,
-   "r90": 206,
+   "r90": 200,
    "r400": 439,
    "nfills_400d": 2000,
-   "last_d": 72.3,
+   "last_d": 73.3,
    "verdict": "REJECT",
-   "why": "open loss-bag (worst pos -35% ROE) = loss-hider"
+   "why": "open loss-bag (worst pos -32% ROE) = loss-hider"
   }
  ]
 }
