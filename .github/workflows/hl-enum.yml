@@ -91,9 +91,12 @@ jobs:
             rm -f results/enum_all.jsonl
             jq -r '.addr // empty' _artifacts/*.jsonl 2>/dev/null | tr 'A-Z' 'a-z' | grep '^0x' | sort -u > "results/enum_${{ github.run_id }}.txt" || true
             echo "run ${{ github.run_id }}: enumerated $(wc -l < "results/enum_${{ github.run_id }}.txt") distinct addrs (venue=$VENUE) at $(date -u +%FT%TZ); raw shard jsonl in run artifacts" > results/ENUM_LATEST.txt
-            # grow the sweep pool ON GH (MM-throttled + deduped) — no LXC ingest in the loop
+            # grow AND self-clean the sweep pool ON GH: MM-throttled + deduped intake, then prune
+            # stale (POOL_STALE_DAYS) + hard-cap (POOL_MAX), archiving evicted addrs to
+            # archive/pool_retired.jsonl for research. Keeps the pool bounded so hl-sweep stops
+            # timing out. Tunables via env (defaults: cap 12000, stale 45d).
             python3 tools/pool_merge.py _artifacts --pool extra_addrs.txt --known pool_full.txt || true
-            git add -A results extra_addrs.txt
+            git add -A results extra_addrs.txt pool_meta.jsonl archive
             git commit -q -m "enum results venue=$VENUE run ${{ github.run_id }} [skip ci]" || { echo "no changes to commit"; break; }
             if git push -q origin HEAD:main; then echo "pushed on try $i"; break; fi
             echo "push raced, retry $i"; sleep 3

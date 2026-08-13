@@ -38,6 +38,8 @@ jobs:
           SHARD_TOTAL: "20"
           OUT: "shard_${{ matrix.shard }}.jsonl"
           DELAY: "2.5"
+          MAX: "1500"          # hard per-shard ceiling (rotates daily) — insurance vs the 2026-08-13
+                               # timeout; the pool is self-cleaned under this by pool_merge.py.
           POOL_FILE: ${{ github.event.inputs.pool_file || 'extra_addrs.txt' }}
           POOL_ONLY: ${{ github.event.inputs.pool_only || '0' }}
         run: python3 gh_fetch.py

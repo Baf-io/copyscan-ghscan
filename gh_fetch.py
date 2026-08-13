@@ -121,9 +121,15 @@ def main():
         if al not in seen:
             seen.add(al); pool.append(al)
     mine = pool[shard::total]
-    if cap:
-        mine = mine[:cap]
-    print(f"[shard {shard}/{total}] active_pool={len(pool)} mine={len(mine)} delay={DELAY}s", flush=True)
+    if cap and len(mine) > cap:
+        # Hard per-shard ceiling so the job can NEVER blow its 180-min timeout again (the 2026-08-13
+        # failure: a 67k pool put ~3.4k addrs/shard × 2.5s past 3h). ROTATE the window by day so the
+        # slice we defer isn't the same one every day — over ceil(len/cap) days the whole shard is
+        # swept. Redundant while the pool is self-cleaned under the cap (pool_merge.py), but it turns
+        # a regrown pool into slower coverage instead of a red run.
+        off = (int(time.time() // 86400) * cap) % len(mine)
+        mine = (mine[off:] + mine[:off])[:cap]
+    print(f"[shard {shard}/{total}] active_pool={len(pool)} mine={len(mine)} cap={cap or 'off'} delay={DELAY}s", flush=True)
     n = len(mine)
     with open(out, "w") as f:
         for i, a in enumerate(mine, 1):
