@@ -1,12 +1,12 @@
 {
- "ts": 1786779188,
+ "ts": 1786798897,
  "method": "forward-Kelly x corr-tax",
  "n_active": 15,
  "n_mature": 14,
  "cum_ret_pct": 3.4097,
  "max_dd_pct": 2.432,
- "sharpe_ann": 4.091,
- "n_points": 100,
+ "sharpe_ann": 4.07,
+ "n_points": 101,
  "weights": {
   "0x07c38f7b7d3341e1c1d7fbe6f03ae7183bdf8684": 0.0,
   "0x0c5ba524dd2e2453e63cda7fe2b9c8755ca0f5c9": 0.0,
@@ -62,8 +62,8 @@
    "addr": "0x07c38f7b7d3341e1c1d7fbe6f03ae7183bdf8684",
    "w": 0.0,
    "cum_ret_pct": -0.263,
-   "samples": 4,
-   "days": 0.93,
+   "samples": 5,
+   "days": 1.16,
    "crowd": 0.0,
    "coins": [
     "HYPE",
