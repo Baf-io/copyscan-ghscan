@@ -1,20 +1,20 @@
 {
- "ts": 1788539162,
+ "ts": 1788554949,
  "method": "forward-Kelly x corr-tax",
  "n_active": 17,
  "n_mature": 17,
- "cum_ret_pct": 3.7391,
- "max_dd_pct": 2.1407,
- "sharpe_ann": 4.344,
- "n_points": 173,
+ "cum_ret_pct": 3.7393,
+ "max_dd_pct": 2.1448,
+ "sharpe_ann": 4.328,
+ "n_points": 174,
  "weights": {
   "0x07c38f7b7d3341e1c1d7fbe6f03ae7183bdf8684": 0.0,
   "0x0c5ba524dd2e2453e63cda7fe2b9c8755ca0f5c9": 0.0,
   "0x22dfa5d3751aa194a119a4eaebce903cc5a635b5": 0.3,
-  "0x27a694f072df54b099fa5e09929f5f6f02a21801": 0.1636,
+  "0x27a694f072df54b099fa5e09929f5f6f02a21801": 0.1639,
   "0x2c8472e807372f7cb7d318efc9811a891f8e1b08": 0.0,
   "0x2ce673a51a1fd838c2ee2bf6912d320ca340a5c5": 0.0,
-  "0x421349d8252db91af2f29b310d33020cb0ca2e97": 0.1056,
+  "0x421349d8252db91af2f29b310d33020cb0ca2e97": 0.1054,
   "0x422c3cf3457a85e9f369242340c023a72a4d6374": 0.0,
   "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e": 0.0,
   "0x5b134297a8999e4838091aec51dd6729862dec0d": 0.0,
@@ -23,7 +23,7 @@
   "0x90466dd1e02f5ac3455b2b29a68f3d9914179b43": 0.0,
   "0x9f68de8f621547da9040ade94e4811916597b445": 0.0,
   "0xae4bc1deea405ab6c199d80c231b42e8fc80ec34": 0.0,
-  "0xb29dcc38ed9e8e53051ccbb541601ae61437f100": 0.1308,
+  "0xb29dcc38ed9e8e53051ccbb541601ae61437f100": 0.1307,
   "0xfac6c2ab9b9e0ed61aea388eb1e7f755811b9fa3": 0.0
  },
  "leads": [
@@ -42,8 +42,8 @@
    "addr": "0x6598f1b6d0e3650b106e150e53cc81dd6578655c",
    "w": 0.3,
    "cum_ret_pct": 2.392,
-   "samples": 61,
-   "days": 21.3,
+   "samples": 62,
+   "days": 21.49,
    "crowd": 0.073,
    "coins": [
     "HYPE"
@@ -51,10 +51,10 @@
   },
   {
    "addr": "0x27a694f072df54b099fa5e09929f5f6f02a21801",
-   "w": 0.1636,
-   "cum_ret_pct": -0.388,
-   "samples": 56,
-   "days": 21.3,
+   "w": 0.1639,
+   "cum_ret_pct": -0.386,
+   "samples": 57,
+   "days": 21.49,
    "crowd": 0.073,
    "coins": [
     "HYPE"
@@ -62,7 +62,7 @@
   },
   {
    "addr": "0xb29dcc38ed9e8e53051ccbb541601ae61437f100",
-   "w": 0.1308,
+   "w": 0.1307,
    "cum_ret_pct": -0.104,
    "samples": 55,
    "days": 10.81,
@@ -73,7 +73,7 @@
   },
   {
    "addr": "0x421349d8252db91af2f29b310d33020cb0ca2e97",
-   "w": 0.1056,
+   "w": 0.1054,
    "cum_ret_pct": 0.007,
    "samples": 39,
    "days": 23.8,
@@ -85,9 +85,9 @@
   {
    "addr": "0x07c38f7b7d3341e1c1d7fbe6f03ae7183bdf8684",
    "w": 0.0,
-   "cum_ret_pct": -3.42,
-   "samples": 77,
-   "days": 21.3,
+   "cum_ret_pct": -3.271,
+   "samples": 78,
+   "days": 21.49,
    "crowd": 0.151,
    "coins": [
     "HYPE",
@@ -143,8 +143,8 @@
    "addr": "0x55580d0f3b6f3ae1587c5e5cbf83d94f5c6c9e9e",
    "w": 0.0,
    "cum_ret_pct": -4.393,
-   "samples": 114,
-   "days": 21.3,
+   "samples": 115,
+   "days": 21.49,
    "crowd": 1.192,
    "coins": [
     "HYPE"
