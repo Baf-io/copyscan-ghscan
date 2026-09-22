@@ -1,1 +1,1 @@
-run 35585730553: enumerated 566 distinct dydx1 addrs at 2026-09-21T10:05:02Z; raw shard jsonl in run artifacts
+run 35709428859: enumerated 423 distinct dydx1 addrs at 2026-09-22T09:28:13Z; raw shard jsonl in run artifacts
