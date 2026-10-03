@@ -1,5 +1,5 @@
 {
- "ts": 1791029862,
+ "ts": 1791044828,
  "method": "forward-Kelly x corr-tax",
  "n_active": 17,
  "n_mature": 17,
@@ -43,7 +43,7 @@
    "w": 0.3,
    "cum_ret_pct": 3.391,
    "samples": 160,
-   "days": 50.13,
+   "days": 50.3,
    "crowd": 0.067,
    "coins": [
     "HYPE"
@@ -76,7 +76,7 @@
    "w": 0.0,
    "cum_ret_pct": -2.858,
    "samples": 176,
-   "days": 50.13,
+   "days": 50.3,
    "crowd": 0.133,
    "coins": [
     "HYPE",
@@ -100,7 +100,7 @@
    "w": 0.0,
    "cum_ret_pct": -3.634,
    "samples": 155,
-   "days": 50.13,
+   "days": 50.3,
    "crowd": 0.067,
    "coins": [
     "HYPE"
@@ -144,7 +144,7 @@
    "w": 0.0,
    "cum_ret_pct": -6.384,
    "samples": 213,
-   "days": 50.13,
+   "days": 50.3,
    "crowd": 1.174,
    "coins": [
     "HYPE"
