@@ -1,1 +1,1 @@
-run 37622019344: swept 19942 addrs at 2026-10-07T14:03:15Z; raw records in run artifacts
+run 37779065785: swept 19978 addrs at 2026-10-08T14:13:25Z; raw records in run artifacts
