@@ -1,1 +1,1 @@
-run 37303806065: openbook rows(open positions)=7003 at 2026-10-05T11:42:48Z; raw shard jsonl in run artifacts
+run 38246936222: openbook rows(open positions)=7035 at 2026-10-12T12:14:30Z; raw shard jsonl in run artifacts
